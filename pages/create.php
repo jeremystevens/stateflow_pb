@@ -1,4 +1,5 @@
 <?php
+session_start();
 require_once '../includes/db.php';
 require_once '../database/init.php';
 
@@ -237,6 +238,7 @@ include '../includes/header.php';
                                             <small class="d-block text-muted">Only via direct link</small>
                                         </label>
                                     </div>
+<?php if (isset($_SESSION['user_id'])): ?>
                                     <div class="form-check">
                                         <input class="form-check-input" type="radio" name="visibility" id="visibilityPrivate" value="private">
                                         <label class="form-check-label" for="visibilityPrivate">
@@ -244,6 +246,15 @@ include '../includes/header.php';
                                             <small class="d-block text-muted">Login required</small>
                                         </label>
                                     </div>
+<?php else: ?>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="visibility" id="visibilityPrivate" value="private" disabled>
+                                        <label class="form-check-label" for="visibilityPrivate">
+                                            <i class="fas fa-lock me-1"></i>Private (Login required)
+                                            <small class="d-block text-muted">Login required</small>
+                                        </label>
+                                    </div>
+<?php endif; ?>
                                 </div>
 
                                 <!-- Expiration -->
