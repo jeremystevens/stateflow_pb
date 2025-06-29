@@ -178,6 +178,7 @@ include '../includes/header.php';
                                         <option value="kotlin">Kotlin</option>
                                         <option value="scala">Scala</option>
                                         <option value="shell">Shell</option>
+                                        <option value="powershell">PowerShell</option>
                                         <option value="dockerfile">Dockerfile</option>
                                     </select>
                                 </div>

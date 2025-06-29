@@ -195,9 +195,21 @@ function formatBytes($size, $precision = 2) {
     return round($size, $precision) . ' ' . $units[$i];
 }
 
+$enableCommandLine = ($paste && ($paste['language'] === 'shell' || $paste['language'] === 'powershell'));
 $pageTitle = $paste ? ($paste['title'] ?: 'Untitled Paste') : 'Paste Not Found';
 include '../includes/header.php';
 ?>
+
+<?php if ($enableCommandLine): ?>
+<!-- Prism.js Command-Line plugin -->
+<link href="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/themes/prism.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/plugins/command-line/prism-command-line.min.css" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/prism.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-bash.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-powershell.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/plugins/command-line/prism-command-line.min.js"></script>
+<?php endif; ?>
 
 <main class="container py-5">
     <?php if ($error): ?>
@@ -788,7 +800,7 @@ include '../includes/header.php';
                                                     </div>
                                                 <?php else: ?>
                                                     <!-- Regular Content -->
-                                                    <pre><code class="language-<?php echo htmlspecialchars($paste['language']); ?>" id="pasteContent"><?php echo htmlspecialchars($paste['content']); ?></code></pre>
+                                                    <pre class="<?php echo ($enableCommandLine ? 'command-line ' : ''); ?>language-<?php echo htmlspecialchars($paste['language']); ?>"><code class="language-<?php echo htmlspecialchars($paste['language']); ?>" id="pasteContent"><?php echo htmlspecialchars($paste['content']); ?></code></pre>
                                                 <?php endif; ?>
                                             </div>
                                         </div>
@@ -1769,7 +1781,9 @@ include '../includes/header.php';
                 .replace(/'/g, '&#39;');
             
             // Directly set innerHTML with pre/code structure
-            const newHTML = `<pre><code class="language-${language}">${escapedContent}</code></pre>`;
+            const commandLine = (language === 'shell' || language === 'powershell');
+            const preClass = commandLine ? `class="command-line language-${language}"` : `class="language-${language}"`;
+            const newHTML = `<pre ${preClass}><code class="language-${language}">${escapedContent}</code></pre>`;
             console.log('New HTML to inject:', newHTML.substring(0, 200));
             
             pasteContent.innerHTML = newHTML;
