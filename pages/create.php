@@ -125,9 +125,9 @@ include '../includes/header.php';
                             <i class="fas fa-plus me-2"></i>Create Paste
                         </h4>
                         <div class="btn-group" role="group">
-                            <button type="button" class="btn btn-outline-light btn-sm" id="loadTemplateBtn">
-                                <i class="fas fa-file-code me-1"></i><span class="d-none d-sm-inline">Load </span>Template
-                            </button>
+                            <!-- <button type="button" class="btn btn-outline-light btn-sm" id="loadTemplateBtn"> -->
+                            <!--     <i class="fas fa-file-code me-1"></i><span class="d-none d-sm-inline">Load </span>Template -->
+                            <!-- </button> -->
                             <button type="button" class="btn btn-outline-light btn-sm" id="importFileBtn">
                                 <i class="fas fa-upload me-1"></i><span class="d-none d-sm-inline">Import </span>File
                             </button>
@@ -617,11 +617,14 @@ volumes:
 };
 
 // Template modal functionality
-document.getElementById('loadTemplateBtn').addEventListener('click', function() {
-    const modal = new bootstrap.Modal(document.getElementById('templateModal'));
-    loadTemplateCategory('web');
-    modal.show();
-});
+const loadTemplateBtn = document.getElementById('loadTemplateBtn');
+if (loadTemplateBtn) {
+    loadTemplateBtn.addEventListener('click', function() {
+        const modal = new bootstrap.Modal(document.getElementById('templateModal'));
+        loadTemplateCategory('web');
+        modal.show();
+    });
+}
 
 document.getElementById('templateCategories').addEventListener('click', function(e) {
     if (e.target.classList.contains('list-group-item')) {
@@ -1003,6 +1006,14 @@ document.addEventListener('click', function(e) {
 // Initialize character count on page load
 document.addEventListener('DOMContentLoaded', function() {
     updateCharCount();
+});
+
+// Initialize Select2 for language selector
+$(document).ready(function() {
+    $('#language').select2({
+        placeholder: 'Select a language',
+        allowClear: true
+    });
 });
 </script>
 
