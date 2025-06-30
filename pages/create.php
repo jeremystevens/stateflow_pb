@@ -1004,6 +1004,14 @@ document.addEventListener('click', function(e) {
 document.addEventListener('DOMContentLoaded', function() {
     updateCharCount();
 });
+
+// Initialize Select2 for language selector
+$(document).ready(function() {
+    $('#language').select2({
+        placeholder: 'Select a language',
+        allowClear: true
+    });
+});
 </script>
 
 <?php include '../includes/footer.php'; ?>
