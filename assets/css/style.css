@@ -1876,3 +1876,13 @@ pre[class*="language-"] .line-highlight:after,
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+/* Ensure modal is above the backdrop */
+.modal-backdrop {
+    z-index: 1040;
+}
+
+.modal-content {
+    z-index: 1050;
+    position: relative;
+}
