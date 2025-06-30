@@ -508,5 +508,18 @@ function getDiscussionThread($threadId) {
     return $stmt->fetch();
 }
 
+/**
+ * Log password access attempts for a paste
+ */
+function logPasteAccessAttempt($pasteId, $ipAddress, $success) {
+    $logDir = __DIR__ . '/../database';
+    if (!is_dir($logDir)) {
+        mkdir($logDir, 0755, true);
+    }
+    $logFile = $logDir . '/access.log';
+    $entry = date('c') . " | {$pasteId} | {$ipAddress} | " . ($success ? 'SUCCESS' : 'FAIL') . PHP_EOL;
+    file_put_contents($logFile, $entry, FILE_APPEND);
+}
+
 
 ?>
