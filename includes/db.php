@@ -188,6 +188,8 @@ function getRecentPastes($limit = 10) {
             SELECT id, title, language, created_at, views
             FROM pastes 
             WHERE is_public = 1 
+            AND visibility = 'public'
+            AND burn_after_read = 0
             AND (expire_time IS NULL OR expire_time > ?)
             AND (burned IS NULL OR burned = 0)
             ORDER BY created_at DESC 
