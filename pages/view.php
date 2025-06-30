@@ -1,4 +1,5 @@
 <?php
+session_start();
 require_once '../includes/db.php';
 require_once '../database/init.php';
 
@@ -8,6 +9,17 @@ $action = $_POST['action'] ?? '';
 $paste = null;
 $error = '';
 $success = '';
+
+if (!empty($pasteId)) {
+    $paste = getPasteById($pasteId);
+    if ($paste && !empty($paste['password'])) {
+        $expires = $_SESSION['unlocked'][$pasteId] ?? 0;
+        if ($expires < time()) {
+            header('Location: password_prompt.php?id=' . $pasteId);
+            exit;
+        }
+    }
+}
 
 // Initialize thread data if viewing a specific thread
 $thread = null;
@@ -89,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 if (empty($pasteId)) {
     $error = 'No paste ID provided.';
 } else {
-    $paste = getPasteById($pasteId);
+    // $paste already loaded above
     
     if (!$paste) {
         $error = 'Paste not found or has expired.';

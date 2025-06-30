@@ -18,7 +18,7 @@ try {
     $totalPastes = $stmt->fetchColumn();
     
     $stmt = $pdo->prepare("
-        SELECT id, title, language, created_at, views
+        SELECT id, title, language, created_at, views, password
         FROM pastes 
         WHERE visibility = 'public' AND (expire_time IS NULL OR expire_time > ?)
         ORDER BY created_at DESC 
@@ -108,6 +108,9 @@ include '../includes/header.php';
                 <p class="paste-language"><?php echo htmlspecialchars($paste['language']); ?></p>
                 <div class="paste-title">
                     <?php echo htmlspecialchars($paste['title'] ?: 'Untitled Paste'); ?>
+                    <?php if (!empty($paste['password'])): ?>
+                        <i class="fa fa-lock text-muted ms-2" title="Password Protected"></i>
+                    <?php endif; ?>
                 </div>
                 <p class="paste-time"><?php echo $timeAgo; ?></p>
             </a>
