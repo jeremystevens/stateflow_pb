@@ -50,6 +50,9 @@ include '../includes/header.php';
                     <?php endif; ?>
                     <form method="post" id="passwordForm">
                         <input type="hidden" name="id" value="<?php echo htmlspecialchars($pasteId); ?>">
+                        <div class="alert alert-info text-light bg-opacity-50 rounded shadow-sm">
+                            🔒 You are trying to view a password-protected paste. A password is required to proceed.
+                        </div>
                         <div class="mb-3">
                             <label for="password" class="form-label">Password</label>
                             <input type="password" name="password" id="password" class="form-control" required autofocus>
