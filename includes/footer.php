@@ -35,32 +35,6 @@
     <!-- Custom JavaScript -->
     <script src="/assets/js/app.js"></script>
     
-    <!-- Vanta.js Background Animation -->
-    <script>
-    // Initialize Vanta.js background when DOM is ready
-    document.addEventListener('DOMContentLoaded', function() {
-        if (typeof VANTA !== 'undefined' && typeof THREE !== 'undefined') {
-            // Check current theme
-            const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-            
-            VANTA.CELLS({
-                el: "#vanta-bg",
-                mouseControls: true,
-                touchControls: true,
-                gyroControls: false,
-                minHeight: 200.00,
-                minWidth: 200.00,
-                scale: 1.00,
-                scaleMobile: 1.00,
-                color1: isDark ? 0x1e293b : 0xf8fafc,
-                color2: isDark ? 0x3b82f6 : 0x6366f1,
-                size: 1.50,
-                speed: 1.00
-            });
-        }
-    });
-    </script>
-    
-    </div> <!-- End Vanta Background Container -->
+
 </body>
 </html>
