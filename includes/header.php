@@ -14,9 +14,6 @@
     <!-- Prism.js for Syntax Highlighting - Using different theme to avoid visual artifacts -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" rel="stylesheet">
     
-    <!-- Vanta.js Background Animation Libraries -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r121/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/vanta@0.5.24/dist/vanta.cells.min.js"></script>
     
     <!-- Select2 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -25,7 +22,6 @@
     <link rel="stylesheet" href="/assets/css/style.css">
 </head>
 <body>
-    <div id="vanta-bg">
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm fixed-top">
         <div class="container-fluid px-4">
