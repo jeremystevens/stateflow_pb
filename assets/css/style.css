@@ -1872,3 +1872,8 @@ pre[class*="language-"] .line-highlight:after,
     z-index: 1050;
     position: relative;
 }
+
+.tabcontent select, .tabcontent button {
+    width: 100%;
+    margin-bottom: 10px;
+}

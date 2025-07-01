@@ -1,0 +1,16 @@
+{
+  "name": "pasteforge/pastebin",
+  "description": "PasteForge: A modern pastebin with versioning support",
+  "require": {
+    "sebastian/diff": "^5.0",
+    "wikimedia/diff": "^3.0",
+    "symfony/serializer": "^6.3",
+    "ramsey/uuid": "^4.7",
+    "league/flysystem": "^3.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "PasteForge\\": "src/"
+    }
+  }
+}
