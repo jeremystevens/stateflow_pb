@@ -9,6 +9,7 @@ $action = $_POST['action'] ?? '';
 $paste = null;
 $error = '';
 $success = '';
+$versions = [];
 
 if (!empty($pasteId)) {
     $paste = getPasteById($pasteId);
@@ -160,6 +161,11 @@ if (empty($pasteId)) {
                 $stmt->execute([$pasteId]);
                 $versionData = $stmt->fetch();
                 $paste['version_count'] = $versionData['version_count'] ?? 0;
+
+                // Fetch all versions if more than one exists
+                $versionStmt = $db->prepare("SELECT * FROM paste_versions WHERE paste_id = ? ORDER BY version_number DESC");
+                $versionStmt->execute([$pasteId]);
+                $versions = $versionStmt->fetchAll(PDO::FETCH_ASSOC);
                 
                 // Get forks count  
                 $stmt = $db->prepare("SELECT COUNT(*) as fork_count FROM paste_forks WHERE original_paste_id = ?");
@@ -188,6 +194,7 @@ if (empty($pasteId)) {
                 $paste['fork_count'] = 0;
                 $paste['comment_count'] = 0;
                 $comments = [];
+                $versions = [];
                 $paste['line_count'] = substr_count($paste['content'], "\n") + 1;
                 $paste['character_count'] = strlen($paste['content']);
                 $paste['file_size'] = formatBytes(strlen($paste['content']));
@@ -665,7 +672,7 @@ include '../includes/header.php';
                         <?php if ($paste['version_count'] > 1): ?>
                         <li class="nav-item" role="presentation">
                             <button class="nav-link border-0 fw-semibold" id="versions-tab" data-bs-toggle="tab" data-bs-target="#versions" type="button" role="tab">
-                                <i class="fas fa-history me-2"></i>Versions <span class="badge bg-secondary ms-1"><?php echo $paste['version_count']; ?></span>
+                                <i class="fas fa-history me-2"></i>Versioning <span class="badge bg-secondary ms-1"><?php echo $paste['version_count']; ?></span>
                             </button>
                         </li>
                         <?php endif; ?>
@@ -813,11 +820,21 @@ include '../includes/header.php';
                         <?php if ($paste['version_count'] > 1): ?>
                         <div class="tab-pane fade" id="versions" role="tabpanel">
                             <div class="p-4">
-                                <h6 class="fw-semibold mb-3">Version History</h6>
-                                <div class="alert alert-info">
-                                    <i class="fas fa-info-circle me-2"></i>
-                                    Version history feature coming soon! This will show all changes made to this paste over time.
+                                <h6 class="fw-semibold mb-3">Versioning</h6>
+                                <div class="mb-3">
+                                    <label for="versionA" class="form-label">Compare:</label>
+                                    <select id="versionA" class="form-select">
+                                        <?php foreach ($versions as $v) echo "<option value='{$v['version_number']}'>v{$v['version_number']}</option>"; ?>
+                                    </select>
                                 </div>
+                                <div class="mb-3">
+                                    <label for="versionB" class="form-label">With:</label>
+                                    <select id="versionB" class="form-select">
+                                        <?php foreach ($versions as $v) echo "<option value='{$v['version_number']}'>v{$v['version_number']}</option>"; ?>
+                                    </select>
+                                </div>
+                                <button class="btn btn-primary w-100" onclick="compareVersions()">Compare</button>
+                                <pre id="diffOutput" class="mt-3"></pre>
                             </div>
                         </div>
                         <?php endif; ?>
@@ -1840,15 +1857,26 @@ include '../includes/header.php';
             ${message}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         `;
-        
+
         document.body.appendChild(notification);
-        
+
         // Auto-remove after 4 seconds
         setTimeout(() => {
             if (notification.parentNode) {
                 notification.remove();
             }
         }, 4000);
+    }
+
+    function compareVersions() {
+        const a = document.getElementById('versionA').value;
+        const b = document.getElementById('versionB').value;
+
+        fetch(`/api/compare_versions.php?paste_id=<?php echo $pasteId; ?>&a=${a}&b=${b}`)
+            .then(res => res.text())
+            .then(html => {
+                document.getElementById('diffOutput').innerHTML = html;
+            });
     }
     </script>
 
