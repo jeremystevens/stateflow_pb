@@ -6,6 +6,13 @@ require_once '../database/init.php';
 $success = false;
 $error = '';
 $pasteId = '';
+$prefill = '';
+$parent_id = $_GET['parent'] ?? null;
+if ($parent_id) {
+    $stmt = $db->prepare("SELECT content FROM pastes WHERE id = ?");
+    $stmt->execute([$parent_id]);
+    $prefill = $stmt->fetchColumn();
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title = trim($_POST['title'] ?? '');
@@ -16,6 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = trim($_POST['password'] ?? '');
     $burnAfterRead = isset($_POST['burn_after_read']);
     $zeroKnowledge = isset($_POST['zero_knowledge']);
+    $parentPasteId = $_POST['parent_paste_id'] ?? null;
     
     if (empty($content)) {
         $error = 'Content cannot be empty.';
@@ -53,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Hash password if provided
         $hashedPassword = $password ? password_hash($password, PASSWORD_DEFAULT) : null;
         
-        $result = createPasteAdvanced($title, $content, $language, $expirationDate, $visibility, $hashedPassword, $burnAfterRead, $zeroKnowledge);
+        $result = createPasteAdvanced($title, $content, $language, $expirationDate, $visibility, $hashedPassword, $burnAfterRead, $zeroKnowledge, $parentPasteId);
         
         if ($result) {
             // Handle different return formats for compatibility
@@ -208,12 +216,15 @@ include '../includes/header.php';
                                         <i class="fas fa-exclamation-triangle me-1"></i>
                                         <small><strong>Zero Knowledge Mode:</strong> Your content will be encrypted before sending to the server. Make sure to save the generated URL as it cannot be recovered if lost.</small>
                                     </div>
-                                    <textarea class="form-control font-monospace" id="content" name="content" 
-                                              rows="20" placeholder="Paste your code or text here..." 
-                                              required><?php echo htmlspecialchars($_POST['content'] ?? ''); ?></textarea>
+                                    <textarea class="form-control font-monospace" id="content" name="content"
+                                              rows="20" placeholder="Paste your code or text here..."
+                                              required><?php echo htmlspecialchars($_POST['content'] ?? $prefill); ?></textarea>
                                     <div class="invalid-feedback">
                                         Please provide some content for your paste.
                                     </div>
+                                    <?php if ($parent_id): ?>
+                                    <input type="hidden" name="parent_paste_id" value="<?= htmlspecialchars($parent_id) ?>">
+                                    <?php endif; ?>
                                 </div>
                             </div>
 

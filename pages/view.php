@@ -24,6 +24,13 @@ if (!empty($pasteId)) {
     }
 }
 
+$parent = null;
+if ($paste && !empty($paste['parent_paste_id'])) {
+    $parentStmt = $db->prepare("SELECT id, title FROM pastes WHERE id = ?");
+    $parentStmt->execute([$paste['parent_paste_id']]);
+    $parent = $parentStmt->fetch(PDO::FETCH_ASSOC);
+}
+
 // Initialize thread data if viewing a specific thread
 $thread = null;
 $threadPosts = [];
@@ -256,7 +263,18 @@ include '../includes/header.php';
         </div>
     </div>
     <?php else: ?>
-    
+
+    <?php if ($parent): ?>
+    <div class="row justify-content-center mb-4">
+        <div class="col-lg-10">
+            <div class="alert alert-secondary chain-parent-link" role="alert">
+                <strong>This is part of a chain.</strong><br>
+                Continues from: <a href="/pages/view.php?id=<?= $parent['id'] ?>"><?= htmlspecialchars($parent['title']) ?></a>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <!-- First View Notice for Burn After Read -->
     <?php if ($paste['burn_after_read'] == 1 && isset($isCreatorView) && $isCreatorView): ?>
     <div class="row justify-content-center mb-4">
