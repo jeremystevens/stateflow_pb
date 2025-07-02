@@ -108,7 +108,7 @@ function createPaste($title, $content, $language, $expiration = null) {
 /**
  * Create a new paste with advanced features
  */
-function createPasteAdvanced($title, $content, $language, $expiration = null, $visibility = 'public', $password = null, $burnAfterRead = false, $zeroKnowledge = false) {
+function createPasteAdvanced($title, $content, $language, $expiration = null, $visibility = 'public', $password = null, $burnAfterRead = false, $zeroKnowledge = false, $parentPasteId = null) {
     global $pdo;
     
     $id = generatePasteId();
@@ -145,24 +145,26 @@ function createPasteAdvanced($title, $content, $language, $expiration = null, $v
     try {
         $stmt = $pdo->prepare("
             INSERT INTO pastes (
-                id, title, content, language, expire_time, created_at, 
-                is_public, password, burn_after_read, zero_knowledge, creator_token, visibility
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                id, title, content, language, expire_time, created_at,
+                is_public, password, burn_after_read, zero_knowledge, creator_token, visibility,
+                parent_paste_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
         
         $stmt->execute([
             $id,
-            $title, 
-            $content, 
-            $language, 
+            $title,
+            $content,
+            $language,
             $expireTime,
             time(), // Unix timestamp
-            $isPublic, 
-            $password, 
+            $isPublic,
+            $password,
             $burnAfterRead ? 1 : 0,
             $zeroKnowledge ? 1 : 0,
             $creatorToken,
-            $visibility
+            $visibility,
+            $parentPasteId
         ]);
         
         // Return appropriate format based on burn after read
