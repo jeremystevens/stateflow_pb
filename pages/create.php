@@ -2,14 +2,14 @@
 session_start();
 require_once '../includes/db.php';
 require_once '../database/init.php';
-
 $success = false;
 $error = '';
 $pasteId = '';
 $prefill = '';
 $parent_id = $_GET['parent'] ?? null;
 if ($parent_id) {
-    $stmt = $db->prepare("SELECT content FROM pastes WHERE id = ?");
+   // $stmt = $db->prepare("SELECT content FROM pastes WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT content FROM pastes WHERE id = ?");
     $stmt->execute([$parent_id]);
     $prefill = $stmt->fetchColumn();
 }
