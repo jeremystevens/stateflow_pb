@@ -1,6 +1,8 @@
 <?php
 require __DIR__ . '/../vendor/autoload.php';
+//use SebastianBergmann\Diff\Differ;
 use SebastianBergmann\Diff\Differ;
+use SebastianBergmann\Diff\Output\UnifiedDiffOutputBuilder;
 
 $db = new PDO('sqlite:' . __DIR__ . '/../database/pastebin.db');
 $pasteId = $_GET['paste_id'];
@@ -13,7 +15,8 @@ $results = [];
 while ($row = $q->fetch(PDO::FETCH_ASSOC)) {
     $results[$row['version_number']] = $row['content'];
 }
-
-$differ = new Differ;
+$outputBuilder = new UnifiedDiffOutputBuilder("--- Original\n+++ New\n");
+$differ = new Differ($outputBuilder);
+//$differ = new Differ;
 $diff = $differ->diff($results[$a] ?? '', $results[$b] ?? '');
 echo "<code><pre>" . htmlentities($diff) . "</pre></code>";
