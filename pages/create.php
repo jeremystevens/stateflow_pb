@@ -80,17 +80,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $creatorToken = null;
             }
 
-            $forkedFromId = $_POST['fork_original_id'] ?? null;
-            // Handle forking logic. Include forked_by_user_id only if user is logged in
-            if (!empty($forkedFromId)) {
+            // Fork handling: record the relationship if this paste was created from another
+            if ($forkOriginalId) {
                 if (isset($_SESSION['user_id'])) {
                     $userId = $_SESSION['user_id'];
-                    $forkInsert = $pdo->prepare("INSERT INTO paste_forks (original_paste_id, forked_paste_id, forked_by_user_id) VALUES (?, ?, ?)");
-                    $forkInsert->execute([$forkedFromId, $pasteId, $userId]);
+                    $stmt = $pdo->prepare("INSERT INTO paste_forks (original_paste_id, forked_paste_id, forked_by_user_id) VALUES (?, ?, ?)");
+                    $stmt->execute([$forkOriginalId, $pasteId, $userId]);
                 } else {
-                    // Allow anonymous forking, skip the user ID
-                    $forkInsert = $pdo->prepare("INSERT INTO paste_forks (original_paste_id, forked_paste_id) VALUES (?, ?)");
-                    $forkInsert->execute([$forkedFromId, $pasteId]);
+                    $stmt = $pdo->prepare("INSERT INTO paste_forks (original_paste_id, forked_paste_id) VALUES (?, ?)");
+                    $stmt->execute([$forkOriginalId, $pasteId]);
                 }
             }
             
