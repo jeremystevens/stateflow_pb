@@ -81,9 +81,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $creatorToken = null;
             }
 
+
+            // Fork handling: record the relationship if this paste was created from another
             if ($forkOriginalId) {
-                $link = $pdo->prepare("INSERT INTO paste_forks (original_paste_id, forked_paste_id) VALUES (?, ?)");
-                $link->execute([$forkOriginalId, $pasteId]);
+                if (isset($_SESSION['user_id'])) {
+                    $userId = $_SESSION['user_id'];
+                    $stmt = $pdo->prepare("INSERT INTO paste_forks (original_paste_id, forked_paste_id, forked_by_user_id) VALUES (?, ?, ?)");
+                    $stmt->execute([$forkOriginalId, $pasteId, $userId]);
+                } else {
+                    $stmt = $pdo->prepare("INSERT INTO paste_forks (original_paste_id, forked_paste_id) VALUES (?, ?)");
+                    $stmt->execute([$forkOriginalId, $pasteId]);
+                }
+
             }
             
             // For burn after read pastes, add secure creator token
