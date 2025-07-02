@@ -1,5 +1,4 @@
 <?php
-session_start();
 require_once '../includes/db.php';
 require_once '../database/init.php';
 
@@ -7,30 +6,9 @@ $pasteId = $_GET['id'] ?? '';
 $viewThread = $_GET['view_thread'] ?? '';
 $action = $_POST['action'] ?? '';
 $paste = null;
+$is_cmd = isset($paste['language']) && in_array($paste['language'], ['shell', 'powershell']);
 $error = '';
 $success = '';
-$versions = [];
-$forkCount = 0;
-$chainCount = 0;
-
-if (!empty($pasteId)) {
-    $paste = getPasteById($pasteId);
-    if ($paste && !empty($paste['password'])) {
-        $expires = $_SESSION['unlocked'][$pasteId] ?? 0;
-        if ($expires < time()) {
-            header('Location: password_prompt.php?id=' . $pasteId);
-            exit;
-        }
-    }
-}
-
-$parent = null;
-if ($paste && !empty($paste['parent_paste_id'])) {
-    //$parentStmt = $db->prepare("SELECT id, title FROM pastes WHERE id = ?");
-    $parentStmt =$pdo->prepare("SELECT * FROM pastes WHERE id = ?");
-    $parentStmt->execute([$paste['parent_paste_id']]);
-    $parent = $parentStmt->fetch(PDO::FETCH_ASSOC);
-}
 
 // Initialize thread data if viewing a specific thread
 $thread = null;
@@ -112,18 +90,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 if (empty($pasteId)) {
     $error = 'No paste ID provided.';
 } else {
-    // $paste already loaded above
+    $paste = getPasteById($pasteId);
     
     if (!$paste) {
         $error = 'Paste not found or has expired.';
     } elseif (isset($paste['burned']) && $paste['burned'] == 1) {
         $error = 'This paste has been burned (deleted after being read) and is no longer available.';
         $paste = null;
+$is_cmd = isset($paste['language']) && in_array($paste['language'], ['shell', 'powershell']);
     } else {
         // Check if paste has expired
         if ($paste['expire_time'] && $paste['expire_time'] < time()) {
             $error = 'This paste has expired.';
             $paste = null;
+$is_cmd = isset($paste['language']) && in_array($paste['language'], ['shell', 'powershell']);
         } else {
             // Handle burn after read logic
             $userIP = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
@@ -171,25 +151,12 @@ if (empty($pasteId)) {
                 $stmt->execute([$pasteId]);
                 $versionData = $stmt->fetch();
                 $paste['version_count'] = $versionData['version_count'] ?? 0;
-
-                // Fetch all versions if more than one exists
-                $versionStmt = $db->prepare("SELECT * FROM paste_versions WHERE paste_id = ? ORDER BY version_number DESC");
-                $versionStmt->execute([$pasteId]);
-                $versions = $versionStmt->fetchAll(PDO::FETCH_ASSOC);
                 
-                // Get forks count
+                // Get forks count  
                 $stmt = $db->prepare("SELECT COUNT(*) as fork_count FROM paste_forks WHERE original_paste_id = ?");
                 $stmt->execute([$pasteId]);
                 $forkData = $stmt->fetch();
                 $paste['fork_count'] = $forkData['fork_count'] ?? 0;
-                $forkCount = $paste['fork_count'];
-
-                // Get chain continuations count
-                $chainStmt = $db->prepare("SELECT COUNT(*) as chain_count FROM pastes WHERE parent_paste_id = ?");
-                $chainStmt->execute([$pasteId]);
-                $chainData = $chainStmt->fetch();
-                $paste['chain_count'] = $chainData['chain_count'] ?? 0;
-                $chainCount = $paste['chain_count'];
                 
                 // Get comments count
                 $stmt = $db->prepare("SELECT COUNT(*) as comment_count FROM comments WHERE paste_id = ? AND is_deleted = 0");
@@ -210,12 +177,8 @@ if (empty($pasteId)) {
                 // Set defaults if queries fail
                 $paste['version_count'] = 1;
                 $paste['fork_count'] = 0;
-                $forkCount = 0;
-                $paste['chain_count'] = 0;
-                $chainCount = 0;
                 $paste['comment_count'] = 0;
                 $comments = [];
-                $versions = [];
                 $paste['line_count'] = substr_count($paste['content'], "\n") + 1;
                 $paste['character_count'] = strlen($paste['content']);
                 $paste['file_size'] = formatBytes(strlen($paste['content']));
@@ -235,9 +198,21 @@ function formatBytes($size, $precision = 2) {
     return round($size, $precision) . ' ' . $units[$i];
 }
 
+$enableCommandLine = ($paste && ($paste['language'] === 'shell' || $paste['language'] === 'powershell'));
 $pageTitle = $paste ? ($paste['title'] ?: 'Untitled Paste') : 'Paste Not Found';
 include '../includes/header.php';
 ?>
+
+<?php if ($enableCommandLine): ?>
+<!-- Prism.js Command-Line plugin -->
+<link href="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/themes/prism.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/plugins/command-line/prism-command-line.min.css" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/prism.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-bash.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-powershell.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/plugins/command-line/prism-command-line.min.js"></script>
+<?php endif; ?>
 
 <main class="container py-5">
     <?php if ($error): ?>
@@ -264,18 +239,7 @@ include '../includes/header.php';
         </div>
     </div>
     <?php else: ?>
-
-    <?php if ($parent): ?>
-    <div class="row justify-content-center mb-4">
-        <div class="col-lg-10">
-            <div class="alert alert-secondary chain-parent-link" role="alert">
-                <strong>This is part of a chain.</strong><br>
-                Continues from: <a href="/pages/view.php?id=<?= $parent['id'] ?>"><?= htmlspecialchars($parent['title']) ?></a>
-            </div>
-        </div>
-    </div>
-    <?php endif; ?>
-
+    
     <!-- First View Notice for Burn After Read -->
     <?php if ($paste['burn_after_read'] == 1 && isset($isCreatorView) && $isCreatorView): ?>
     <div class="row justify-content-center mb-4">
@@ -704,7 +668,7 @@ include '../includes/header.php';
                         <?php if ($paste['version_count'] > 1): ?>
                         <li class="nav-item" role="presentation">
                             <button class="nav-link border-0 fw-semibold" id="versions-tab" data-bs-toggle="tab" data-bs-target="#versions" type="button" role="tab">
-                                <i class="fas fa-history me-2"></i>Versioning <span class="badge bg-secondary ms-1"><?php echo $paste['version_count']; ?></span>
+                                <i class="fas fa-history me-2"></i>Versions <span class="badge bg-secondary ms-1"><?php echo $paste['version_count']; ?></span>
                             </button>
                         </li>
                         <?php endif; ?>
@@ -713,13 +677,6 @@ include '../includes/header.php';
                                 <i class="fas fa-link me-2"></i>Related
                             </button>
                         </li>
-                        <?php if ($chainCount > 0): ?>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link border-0 fw-semibold" id="chain-tab" data-bs-toggle="tab" data-bs-target="#chain" type="button" role="tab">
-                                <i class="fas fa-stream me-2"></i>Chain <span class="badge bg-secondary ms-1"><?php echo $chainCount; ?></span>
-                            </button>
-                        </li>
-                        <?php endif; ?>
                         <?php if ($paste['fork_count'] > 0): ?>
                         <li class="nav-item" role="presentation">
                             <button class="nav-link border-0 fw-semibold" id="forks-tab" data-bs-toggle="tab" data-bs-target="#forks" type="button" role="tab">
@@ -846,7 +803,7 @@ include '../includes/header.php';
                                                     </div>
                                                 <?php else: ?>
                                                     <!-- Regular Content -->
-                                                    <pre><code class="language-<?php echo htmlspecialchars($paste['language']); ?>" id="pasteContent"><?php echo htmlspecialchars($paste['content']); ?></code></pre>
+                                                    <pre class="<?php echo ($enableCommandLine ? 'command-line ' : ''); ?>language-<?php echo htmlspecialchars($paste['language']); ?>"><code class="language-<?php echo htmlspecialchars($paste['language']); ?>" id="pasteContent"><?php echo htmlspecialchars($paste['content']); ?></code></pre>
                                                 <?php endif; ?>
                                             </div>
                                         </div>
@@ -859,21 +816,11 @@ include '../includes/header.php';
                         <?php if ($paste['version_count'] > 1): ?>
                         <div class="tab-pane fade" id="versions" role="tabpanel">
                             <div class="p-4">
-                                <h6 class="fw-semibold mb-3">Versioning</h6>
-                                <div class="mb-3">
-                                    <label for="versionA" class="form-label">Compare:</label>
-                                    <select id="versionA" class="form-select">
-                                        <?php foreach ($versions as $v) echo "<option value='{$v['version_number']}'>v{$v['version_number']}</option>"; ?>
-                                    </select>
+                                <h6 class="fw-semibold mb-3">Version History</h6>
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Version history feature coming soon! This will show all changes made to this paste over time.
                                 </div>
-                                <div class="mb-3">
-                                    <label for="versionB" class="form-label">With:</label>
-                                    <select id="versionB" class="form-select">
-                                        <?php foreach ($versions as $v) echo "<option value='{$v['version_number']}'>v{$v['version_number']}</option>"; ?>
-                                    </select>
-                                </div>
-                                <button class="btn btn-primary w-100" onclick="compareVersions()">Compare</button>
-                                <pre id="diffOutput" class="mt-3"></pre>
                             </div>
                         </div>
                         <?php endif; ?>
@@ -889,64 +836,15 @@ include '../includes/header.php';
                             </div>
                         </div>
 
-                        <!-- Chain Tab -->
-                        <?php if ($chainCount > 0): ?>
-                        <div class="tab-pane fade" id="chain" role="tabpanel">
-                            <div class="p-4">
-                                <h6 class="fw-semibold mb-3">Chain Continuations</h6>
-                                <?php
-                                    $chainList = $db->prepare(
-                                        "SELECT p.*, u.username, u.profile_image FROM pastes p LEFT JOIN users u ON p.user_id = u.id WHERE p.parent_paste_id = ? ORDER BY p.created_at ASC LIMIT 10"
-                                    );
-                                    $chainList->execute([$pasteId]);
-                                    foreach ($chainList as $chain) {
-                                ?>
-                                    <div class="chain-item mb-3">
-                                        <img src="<?= $chain['profile_image'] ?? '/img/default-avatar.png' ?>" width="30" class="me-2 rounded-circle">
-                                        <strong><?= htmlspecialchars($chain['title']) ?></strong> by <?= htmlspecialchars($chain['username'] ?? 'Anonymous') ?>
-                                        <div class="small text-muted">
-                                            <?= date('M j, Y H:i', $chain['created_at']) ?> — <?= $chain['views'] ?> views
-                                        </div>
-                                        <div>
-                                            <a href="/pages/view.php?id=<?= $chain['id'] ?>" class="me-2">View</a>
-                                            <a href="/pages/create.php?parent=<?= $pasteId ?>">Continue Chain</a>
-                                        </div>
-                                    </div>
-                                <?php } ?>
-                                <?php if ($chainCount > 10): ?>
-                                    <div class="text-muted">+<?= $chainCount - 10 ?> more in chain...</div>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                        <?php endif; ?>
-
                         <!-- Forks Tab -->
                         <?php if ($paste['fork_count'] > 0): ?>
                         <div class="tab-pane fade" id="forks" role="tabpanel">
                             <div class="p-4">
-                                <h6 class="fw-semibold mb-3">Forks</h6>
-                                <?php
-                                    $forkList = $db->prepare(
-                                        "SELECT p.*, u.username, u.profile_image FROM paste_forks f JOIN pastes p ON f.forked_paste_id = p.id LEFT JOIN users u ON f.forked_by_user_id = u.id WHERE f.original_paste_id = ? ORDER BY f.created_at DESC LIMIT 10"
-                                    );
-                                    $forkList->execute([$pasteId]);
-                                    foreach ($forkList as $fork) {
-                                ?>
-                                    <div class="fork-item mb-3">
-                                        <img src="<?= $fork['profile_image'] ?? '/img/default-avatar.png' ?>" width="30" class="me-2 rounded-circle">
-                                        <strong><?= htmlspecialchars($fork['title']) ?></strong> by <?= htmlspecialchars($fork['username'] ?? 'Anonymous') ?>
-                                        <div class="small text-muted">
-                                            <?= date('M j, Y H:i', $fork['created_at']) ?> — <?= $fork['views'] ?> views
-                                        </div>
-                                        <div>
-                                            <a href="/pages/view.php?id=<?= $fork['id'] ?>" class="me-2">View</a>
-                                            <a href="/pages/create.php?fork=<?= $fork['id'] ?>">Fork</a>
-                                        </div>
-                                    </div>
-                                <?php } ?>
-                                <?php if ($paste['fork_count'] > 10): ?>
-                                    <div class="text-muted">+<?= $paste['fork_count'] - 10 ?> more forks...</div>
-                                <?php endif; ?>
+                                <h6 class="fw-semibold mb-3">Forks & Derivatives</h6>
+                                <div class="alert alert-info">
+                                    <i class="fas fa-code-branch me-2"></i>
+                                    Fork management and derivative tracking coming soon!
+                                </div>
                             </div>
                         </div>
                         <?php endif; ?>
@@ -1238,12 +1136,18 @@ include '../includes/header.php';
                         .meta { color: #666; margin-bottom: 20px; }
                         pre { white-space: pre-wrap; line-height: 1.4; }
                     </style>
-                </head>
+                <?php if (isset($is_cmd) && $is_cmd): ?>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/plugins/command-line/prism-command-line.min.css">
+<?php endif; ?>
+</head>
                 <body>
                     <h1>${title}</h1>
                     <div class="meta">Language: ${language}</div>
                     <pre>${content}</pre>
-                </body>
+                <?php if (isset($is_cmd) && $is_cmd): ?>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/plugins/command-line/prism-command-line.min.js"></script>
+<?php endif; ?>
+</body>
             </html>
         `);
         printWindow.document.close();
@@ -1316,14 +1220,20 @@ include '../includes/header.php';
                         line-height: 1.4;
                     }
                 </style>
-            </head>
+            <?php if (isset($is_cmd) && $is_cmd): ?>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/plugins/command-line/prism-command-line.min.css">
+<?php endif; ?>
+</head>
             <body>
                 <div class="header">
                     <div class="title">${title}</div>
                     <div class="meta">Language: ${language} | Generated from PasteForge</div>
                 </div>
                 <pre>${content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
-            </body>
+            <?php if (isset($is_cmd) && $is_cmd): ?>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/plugins/command-line/prism-command-line.min.js"></script>
+<?php endif; ?>
+</body>
             </html>
         `);
         
@@ -1440,14 +1350,6 @@ include '../includes/header.php';
                 notification.remove();
             }
         }, 3000);
-    }
-
-    function openTab(evt, tabId) {
-        document.querySelectorAll('.tabcontent').forEach(el => el.style.display = 'none');
-        const tab = document.getElementById(tabId);
-        if (tab) {
-            tab.style.display = 'block';
-        }
     }
 
     // Toggle reply form visibility
@@ -1894,7 +1796,9 @@ include '../includes/header.php';
                 .replace(/'/g, '&#39;');
             
             // Directly set innerHTML with pre/code structure
-            const newHTML = `<pre><code class="language-${language}">${escapedContent}</code></pre>`;
+            const commandLine = (language === 'shell' || language === 'powershell');
+            const preClass = commandLine ? `class="command-line language-${language}"` : `class="language-${language}"`;
+            const newHTML = `<pre ${preClass}><code class="language-${language}">${escapedContent}</code></pre>`;
             console.log('New HTML to inject:', newHTML.substring(0, 200));
             
             pasteContent.innerHTML = newHTML;
@@ -1953,26 +1857,15 @@ include '../includes/header.php';
             ${message}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         `;
-
+        
         document.body.appendChild(notification);
-
+        
         // Auto-remove after 4 seconds
         setTimeout(() => {
             if (notification.parentNode) {
                 notification.remove();
             }
         }, 4000);
-    }
-
-    function compareVersions() {
-        const a = document.getElementById('versionA').value;
-        const b = document.getElementById('versionB').value;
-
-        fetch(`/api/compare_versions.php?paste_id=<?php echo $pasteId; ?>&a=${a}&b=${b}`)
-            .then(res => res.text())
-            .then(html => {
-                document.getElementById('diffOutput').innerHTML = html;
-            });
     }
     </script>
 
