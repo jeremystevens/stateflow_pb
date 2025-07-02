@@ -13,10 +13,10 @@ if ($parent_id) {
     $prefill = $stmt->fetchColumn();
 }
 
-$forkOriginalId = $_GET['fork'] ?? null;
-if ($forkOriginalId) {
+$fork_id = $_GET['fork'] ?? null;
+if ($fork_id) {
     $stmt = $pdo->prepare("SELECT content FROM pastes WHERE id = ?");
-    $stmt->execute([$forkOriginalId]);
+    $stmt->execute([$fork_id]);
     $prefill = $stmt->fetchColumn();
 }
 
@@ -30,6 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $burnAfterRead = isset($_POST['burn_after_read']);
     $zeroKnowledge = isset($_POST['zero_knowledge']);
     $parentPasteId = $_POST['parent_paste_id'] ?? null;
+    $forkOriginalId = $_POST['fork_original_id'] ?? ($fork_id ?? null);
     
     if (empty($content)) {
         $error = 'Content cannot be empty.';
@@ -80,6 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $creatorToken = null;
             }
 
+
             // Fork handling: record the relationship if this paste was created from another
             if ($forkOriginalId) {
                 if (isset($_SESSION['user_id'])) {
@@ -90,6 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt = $pdo->prepare("INSERT INTO paste_forks (original_paste_id, forked_paste_id) VALUES (?, ?)");
                     $stmt->execute([$forkOriginalId, $pasteId]);
                 }
+
             }
             
             // For burn after read pastes, add secure creator token
@@ -243,7 +246,9 @@ include '../includes/header.php';
                                     <?php if ($parent_id): ?>
                                     <input type="hidden" name="parent_paste_id" value="<?= htmlspecialchars($parent_id) ?>">
                                     <?php endif; ?>
-                                    <input type="hidden" name="fork_original_id" value="<?= htmlspecialchars($forkOriginalId ?? '') ?>">
+                                    <?php if ($fork_id): ?>
+                                    <input type="hidden" name="fork_original_id" value="<?= htmlspecialchars($fork_id) ?>">
+                                    <?php endif; ?>
                                 </div>
                             </div>
 
