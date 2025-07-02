@@ -32,6 +32,8 @@ if ($paste && !empty($paste['parent_paste_id'])) {
     $parent = $parentStmt->fetch(PDO::FETCH_ASSOC);
 }
 
+$origin = null;
+
 // Initialize thread data if viewing a specific thread
 $thread = null;
 $threadPosts = [];
@@ -178,11 +180,18 @@ if (empty($pasteId)) {
                 $versions = $versionStmt->fetchAll(PDO::FETCH_ASSOC);
                 
                 // Get forks count
-                $stmt = $db->prepare("SELECT COUNT(*) as fork_count FROM paste_forks WHERE original_paste_id = ?");
-                $stmt->execute([$pasteId]);
-                $forkData = $stmt->fetch();
-                $paste['fork_count'] = $forkData['fork_count'] ?? 0;
+                $forks_q = $db->prepare("SELECT COUNT(*) FROM paste_forks WHERE original_paste_id = ?");
+                $forks_q->execute([$pasteId]);
+                $fork_count = $forks_q->fetchColumn();
+                $paste['fork_count'] = $fork_count ?: 0;
                 $forkCount = $paste['fork_count'];
+
+                // Determine if this paste is a fork of another
+                $origin_q = $db->prepare(
+                    "SELECT p.id, p.title FROM pastes p JOIN paste_forks f ON f.original_paste_id = p.id WHERE f.forked_paste_id = ?"
+                );
+                $origin_q->execute([$pasteId]);
+                $origin = $origin_q->fetch(PDO::FETCH_ASSOC);
 
                 // Get chain continuations count
                 $chainStmt = $db->prepare("SELECT COUNT(*) as chain_count FROM pastes WHERE parent_paste_id = ?");
@@ -271,6 +280,17 @@ include '../includes/header.php';
             <div class="alert alert-secondary chain-parent-link" role="alert">
                 <strong>This is part of a chain.</strong><br>
                 Continues from: <a href="/pages/view.php?id=<?= $parent['id'] ?>"><?= htmlspecialchars($parent['title']) ?></a>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($origin): ?>
+    <div class="row justify-content-center mb-4">
+        <div class="col-lg-10">
+            <div class="alert alert-info fork-origin" role="alert">
+                <i class="fas fa-code-branch me-1"></i>
+                Forked from <a href="/pages/view.php?id=<?= $origin['id'] ?>"><?= htmlspecialchars($origin['title']) ?></a>
             </div>
         </div>
     </div>
@@ -577,6 +597,11 @@ include '../includes/header.php';
                         <div class="flex-grow-1">
                             <h2 class="mb-0 fw-bold">
                                 <?php echo htmlspecialchars($paste['title'] ?: 'Untitled Paste'); ?>
+                                <?php if ($origin): ?>
+                                <a href="/pages/view.php?id=<?= $origin['id'] ?>" class="ms-2 text-decoration-none" title="Forked from <?= htmlspecialchars($origin['title']) ?>">
+                                    <i class="fas fa-code-branch"></i>
+                                </a>
+                                <?php endif; ?>
                             </h2>
                         </div>
                         <!-- Desktop Action Buttons -->
@@ -602,7 +627,7 @@ include '../includes/header.php';
                                     <li><a class="dropdown-item" href="create.php?clone=<?php echo $pasteId; ?>">
                                         <i class="fas fa-clone me-2"></i>Clone Paste
                                     </a></li>
-                                    <li><a class="dropdown-item" href="#" onclick="forkPaste()">
+                                    <li><a class="dropdown-item" href="create.php?fork=<?php echo $pasteId; ?>">
                                         <i class="fas fa-code-branch me-2"></i>Fork Paste
                                     </a></li>
                                     <li><a class="dropdown-item" href="#" onclick="addToFavorites()">
@@ -635,7 +660,7 @@ include '../includes/header.php';
                                     <li><a class="dropdown-item" href="create.php?clone=<?php echo $pasteId; ?>">
                                         <i class="fas fa-clone me-2"></i>Clone Paste
                                     </a></li>
-                                    <li><a class="dropdown-item" href="#" onclick="forkPaste()">
+                                    <li><a class="dropdown-item" href="create.php?fork=<?php echo $pasteId; ?>">
                                         <i class="fas fa-code-branch me-2"></i>Fork Paste
                                     </a></li>
                                     <li><a class="dropdown-item" href="#" onclick="addToFavorites()">
@@ -1341,7 +1366,7 @@ include '../includes/header.php';
 
     // Fork paste
     function forkPaste() {
-        showNotification('Fork functionality coming soon!', 'info');
+        window.location.href = 'create.php?fork=<?php echo $pasteId; ?>';
     }
 
     // Report paste

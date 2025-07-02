@@ -8,9 +8,15 @@ $pasteId = '';
 $prefill = '';
 $parent_id = $_GET['parent'] ?? null;
 if ($parent_id) {
-   // $stmt = $db->prepare("SELECT content FROM pastes WHERE id = ?");
-    $stmt = $pdo->prepare("SELECT content FROM pastes WHERE id = ?");
+   $stmt = $pdo->prepare("SELECT content FROM pastes WHERE id = ?");
     $stmt->execute([$parent_id]);
+    $prefill = $stmt->fetchColumn();
+}
+
+$fork_id = $_GET['fork'] ?? null;
+if ($fork_id) {
+    $stmt = $pdo->prepare("SELECT content FROM pastes WHERE id = ?");
+    $stmt->execute([$fork_id]);
     $prefill = $stmt->fetchColumn();
 }
 
@@ -24,6 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $burnAfterRead = isset($_POST['burn_after_read']);
     $zeroKnowledge = isset($_POST['zero_knowledge']);
     $parentPasteId = $_POST['parent_paste_id'] ?? null;
+    $forkOriginalId = $_POST['fork_original_id'] ?? ($fork_id ?? null);
     
     if (empty($content)) {
         $error = 'Content cannot be empty.';
@@ -72,6 +79,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Backward compatibility for non-burn pastes
                 $pasteId = $result;
                 $creatorToken = null;
+            }
+
+            if ($forkOriginalId) {
+                $link = $pdo->prepare("INSERT INTO paste_forks (original_paste_id, forked_paste_id) VALUES (?, ?)");
+                $link->execute([$forkOriginalId, $pasteId]);
             }
             
             // For burn after read pastes, add secure creator token
@@ -224,6 +236,9 @@ include '../includes/header.php';
                                     </div>
                                     <?php if ($parent_id): ?>
                                     <input type="hidden" name="parent_paste_id" value="<?= htmlspecialchars($parent_id) ?>">
+                                    <?php endif; ?>
+                                    <?php if ($fork_id): ?>
+                                    <input type="hidden" name="fork_original_id" value="<?= htmlspecialchars($fork_id) ?>">
                                     <?php endif; ?>
                                 </div>
                             </div>
