@@ -10,6 +10,8 @@ $paste = null;
 $error = '';
 $success = '';
 $versions = [];
+$forkCount = 0;
+$chainCount = 0;
 
 if (!empty($pasteId)) {
     $paste = getPasteById($pasteId);
@@ -167,11 +169,19 @@ if (empty($pasteId)) {
                 $versionStmt->execute([$pasteId]);
                 $versions = $versionStmt->fetchAll(PDO::FETCH_ASSOC);
                 
-                // Get forks count  
+                // Get forks count
                 $stmt = $db->prepare("SELECT COUNT(*) as fork_count FROM paste_forks WHERE original_paste_id = ?");
                 $stmt->execute([$pasteId]);
                 $forkData = $stmt->fetch();
                 $paste['fork_count'] = $forkData['fork_count'] ?? 0;
+                $forkCount = $paste['fork_count'];
+
+                // Get chain continuations count
+                $chainStmt = $db->prepare("SELECT COUNT(*) as chain_count FROM pastes WHERE parent_paste_id = ?");
+                $chainStmt->execute([$pasteId]);
+                $chainData = $chainStmt->fetch();
+                $paste['chain_count'] = $chainData['chain_count'] ?? 0;
+                $chainCount = $paste['chain_count'];
                 
                 // Get comments count
                 $stmt = $db->prepare("SELECT COUNT(*) as comment_count FROM comments WHERE paste_id = ? AND is_deleted = 0");
@@ -192,6 +202,9 @@ if (empty($pasteId)) {
                 // Set defaults if queries fail
                 $paste['version_count'] = 1;
                 $paste['fork_count'] = 0;
+                $forkCount = 0;
+                $paste['chain_count'] = 0;
+                $chainCount = 0;
                 $paste['comment_count'] = 0;
                 $comments = [];
                 $versions = [];
@@ -681,6 +694,13 @@ include '../includes/header.php';
                                 <i class="fas fa-link me-2"></i>Related
                             </button>
                         </li>
+                        <?php if ($chainCount > 0): ?>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link border-0 fw-semibold" id="chain-tab" data-bs-toggle="tab" data-bs-target="#chain" type="button" role="tab">
+                                <i class="fas fa-stream me-2"></i>Chain <span class="badge bg-secondary ms-1"><?php echo $chainCount; ?></span>
+                            </button>
+                        </li>
+                        <?php endif; ?>
                         <?php if ($paste['fork_count'] > 0): ?>
                         <li class="nav-item" role="presentation">
                             <button class="nav-link border-0 fw-semibold" id="forks-tab" data-bs-toggle="tab" data-bs-target="#forks" type="button" role="tab">
@@ -850,15 +870,64 @@ include '../includes/header.php';
                             </div>
                         </div>
 
+                        <!-- Chain Tab -->
+                        <?php if ($chainCount > 0): ?>
+                        <div class="tab-pane fade" id="chain" role="tabpanel">
+                            <div class="p-4">
+                                <h6 class="fw-semibold mb-3">Chain Continuations</h6>
+                                <?php
+                                    $chainList = $db->prepare(
+                                        "SELECT p.*, u.username, u.profile_image FROM pastes p LEFT JOIN users u ON p.user_id = u.id WHERE p.parent_paste_id = ? ORDER BY p.created_at ASC LIMIT 10"
+                                    );
+                                    $chainList->execute([$pasteId]);
+                                    foreach ($chainList as $chain) {
+                                ?>
+                                    <div class="chain-item mb-3">
+                                        <img src="<?= $chain['profile_image'] ?? '/img/default-avatar.png' ?>" width="30" class="me-2 rounded-circle">
+                                        <strong><?= htmlspecialchars($chain['title']) ?></strong> by <?= htmlspecialchars($chain['username'] ?? 'Anonymous') ?>
+                                        <div class="small text-muted">
+                                            <?= date('M j, Y H:i', $chain['created_at']) ?> — <?= $chain['views'] ?> views
+                                        </div>
+                                        <div>
+                                            <a href="/pages/view.php?id=<?= $chain['id'] ?>" class="me-2">View</a>
+                                            <a href="/pages/create.php?parent=<?= $pasteId ?>">Continue Chain</a>
+                                        </div>
+                                    </div>
+                                <?php } ?>
+                                <?php if ($chainCount > 10): ?>
+                                    <div class="text-muted">+<?= $chainCount - 10 ?> more in chain...</div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+
                         <!-- Forks Tab -->
                         <?php if ($paste['fork_count'] > 0): ?>
                         <div class="tab-pane fade" id="forks" role="tabpanel">
                             <div class="p-4">
-                                <h6 class="fw-semibold mb-3">Forks & Derivatives</h6>
-                                <div class="alert alert-info">
-                                    <i class="fas fa-code-branch me-2"></i>
-                                    Fork management and derivative tracking coming soon!
-                                </div>
+                                <h6 class="fw-semibold mb-3">Forks</h6>
+                                <?php
+                                    $forkList = $db->prepare(
+                                        "SELECT p.*, u.username, u.profile_image FROM paste_forks f JOIN pastes p ON f.forked_paste_id = p.id LEFT JOIN users u ON f.forked_by_user_id = u.id WHERE f.original_paste_id = ? ORDER BY f.created_at DESC LIMIT 10"
+                                    );
+                                    $forkList->execute([$pasteId]);
+                                    foreach ($forkList as $fork) {
+                                ?>
+                                    <div class="fork-item mb-3">
+                                        <img src="<?= $fork['profile_image'] ?? '/img/default-avatar.png' ?>" width="30" class="me-2 rounded-circle">
+                                        <strong><?= htmlspecialchars($fork['title']) ?></strong> by <?= htmlspecialchars($fork['username'] ?? 'Anonymous') ?>
+                                        <div class="small text-muted">
+                                            <?= date('M j, Y H:i', $fork['created_at']) ?> — <?= $fork['views'] ?> views
+                                        </div>
+                                        <div>
+                                            <a href="/pages/view.php?id=<?= $fork['id'] ?>" class="me-2">View</a>
+                                            <a href="/pages/create.php?fork=<?= $fork['id'] ?>">Fork</a>
+                                        </div>
+                                    </div>
+                                <?php } ?>
+                                <?php if ($paste['fork_count'] > 10): ?>
+                                    <div class="text-muted">+<?= $paste['fork_count'] - 10 ?> more forks...</div>
+                                <?php endif; ?>
                             </div>
                         </div>
                         <?php endif; ?>
@@ -1352,6 +1421,14 @@ include '../includes/header.php';
                 notification.remove();
             }
         }, 3000);
+    }
+
+    function openTab(evt, tabId) {
+        document.querySelectorAll('.tabcontent').forEach(el => el.style.display = 'none');
+        const tab = document.getElementById(tabId);
+        if (tab) {
+            tab.style.display = 'block';
+        }
     }
 
     // Toggle reply form visibility
