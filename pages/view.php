@@ -612,7 +612,7 @@ include '../includes/header.php';
                             <button class="btn btn-outline-primary btn-sm" onclick="downloadPaste()" title="Download">
                                 <i class="fas fa-download me-1"></i>Download
                             </button>
-                            <button class="btn btn-outline-danger btn-sm" onclick="reportPaste()" title="Report">
+                            <button class="btn btn-outline-danger btn-sm" onclick="reportPaste('<?php echo $pasteId; ?>')" title="Report">
                                 <i class="fas fa-flag me-1"></i>Report
                             </button>
                             <div class="dropdown">
@@ -653,7 +653,7 @@ include '../includes/header.php';
                                         <i class="fas fa-share me-2"></i>Share Paste
                                     </a></li>
                                     <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item text-danger" href="#" onclick="reportPaste()">
+                                    <li><a class="dropdown-item text-danger" href="#" onclick="reportPaste('<?php echo $pasteId; ?>')">
                                         <i class="fas fa-flag me-2"></i>Report Paste
                                     </a></li>
                                     <li><hr class="dropdown-divider"></li>
@@ -1369,11 +1369,47 @@ include '../includes/header.php';
         window.location.href = 'create.php?fork=<?php echo $pasteId; ?>';
     }
 
+    // Display flag modal
+    function showFlagModal(html) {
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = html;
+        document.body.appendChild(wrapper);
+        const modalEl = wrapper.querySelector('.modal');
+        const modal = new bootstrap.Modal(modalEl);
+        modalEl.addEventListener('hidden.bs.modal', () => wrapper.remove());
+        const form = modalEl.querySelector('#flagForm');
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(form);
+            fetch('flag_paste.php', { method: 'POST', body: formData })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        modal.hide();
+                        showNotification(data.message, 'success');
+                    } else {
+                        const err = modalEl.querySelector('.error-message');
+                        if (err) err.textContent = data.message || 'Failed to report';
+                    }
+                })
+                .catch(() => {
+                    const err = modalEl.querySelector('.error-message');
+                    if (err) err.textContent = 'Failed to submit report';
+                });
+        });
+        modal.show();
+    }
+
     // Report paste
-    function reportPaste() {
-        if (confirm('Are you sure you want to report this paste for inappropriate content?')) {
-            showNotification('Report submitted. Thank you for helping keep our community safe.', 'success');
-        }
+    function reportPaste(pasteId) {
+        fetch(`flag_paste.php?paste_id=${pasteId}`)
+            .then(response => response.text())
+            .then(html => {
+                showFlagModal(html);
+            })
+            .catch(error => {
+                console.error('Error loading flag form:', error);
+            });
     }
 
     // Share paste
