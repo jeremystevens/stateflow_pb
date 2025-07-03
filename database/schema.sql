@@ -187,6 +187,23 @@ CREATE TABLE IF NOT EXISTS "rate_limits" (
         PRIMARY KEY("id")
 );
 
+-- Reports submitted by users
+CREATE TABLE IF NOT EXISTS paste_flags (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    paste_id INTEGER NOT NULL,
+    user_id TEXT,
+    ip_address TEXT,
+    flag_type TEXT NOT NULL,
+    reason TEXT,
+    description TEXT,
+    created_at INTEGER DEFAULT (strftime('%s', 'now')),
+    status TEXT DEFAULT 'pending',
+    reviewed_by TEXT,
+    reviewed_at INTEGER,
+    FOREIGN KEY(paste_id) REFERENCES pastes(id),
+    FOREIGN KEY(user_id) REFERENCES users(id)
+);
+
 -- Discussion system tables
 CREATE TABLE IF NOT EXISTS paste_discussion_threads (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
