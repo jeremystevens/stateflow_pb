@@ -940,7 +940,7 @@ include '../includes/header.php';
                                 <h6 class="fw-semibold mb-3">Chain Continuations</h6>
                                 <?php
                                     $chainList = $db->prepare(
-                                        "SELECT p.*, u.username, u.profile_image FROM pastes p LEFT JOIN users u ON p.user_id = u.id WHERE p.parent_paste_id = ? ORDER BY p.created_at ASC LIMIT 10"
+                                        "SELECT p.*, u.username, u.profile_image FROM pastes p LEFT JOIN users u ON p.user_id = u.id WHERE p.parent_paste_id = ? ORDER BY p.created_at DESC LIMIT 10"
                                     );
                                     $chainList->execute([$pasteId]);
                                     foreach ($chainList as $chain) {
