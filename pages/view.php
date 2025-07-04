@@ -23,23 +23,6 @@ if (!empty($pasteId)) {
             exit;
         }
     }
-
-    if ($paste) {
-        $db = getDatabase();
-
-        // Get the number of forks
-        $stmtForkCount = $db->prepare("SELECT COUNT(*) FROM paste_forks WHERE original_paste_id = ?");
-        $stmtForkCount->execute([$paste['id']]);
-        $paste['fork_count'] = (int) $stmtForkCount->fetchColumn();
-
-        // Get the number of versions/chain continuations
-        $stmtChainCount = $db->prepare("SELECT COUNT(*) FROM pastes WHERE chain_parent_id = ?");
-        $stmtChainCount->execute([$paste['id']]);
-        $paste['version_count'] = (int) $stmtChainCount->fetchColumn();
-
-        $forkCount = $paste['fork_count'];
-        $chainCount = $paste['version_count'];
-    }
 }
 
 $parent = null;
@@ -192,10 +175,23 @@ if (empty($pasteId)) {
                 $flagCheck->execute([$pasteId, $ip]);
                 $hasFlagged = $flagCheck->fetchColumn() !== false;
                 
+                // Get versions count
+                $stmt = $db->prepare("SELECT COUNT(*) as version_count FROM paste_versions WHERE paste_id = ?");
+                $stmt->execute([$pasteId]);
+                $versionData = $stmt->fetch();
+                $paste['version_count'] = $versionData['version_count'] ?? 0;
+
                 // Fetch all versions if more than one exists
                 $versionStmt = $db->prepare("SELECT * FROM paste_versions WHERE paste_id = ? ORDER BY version_number DESC");
                 $versionStmt->execute([$pasteId]);
                 $versions = $versionStmt->fetchAll(PDO::FETCH_ASSOC);
+                
+                // Get forks count
+                $forks_q = $db->prepare("SELECT COUNT(*) FROM paste_forks WHERE original_paste_id = ?");
+                $forks_q->execute([$pasteId]);
+                $fork_count = $forks_q->fetchColumn();
+                $paste['fork_count'] = $fork_count ?: 0;
+                $forkCount = $paste['fork_count'];
 
                 // Determine if this paste is a fork of another
                 $origin_q = $db->prepare(
@@ -204,6 +200,12 @@ if (empty($pasteId)) {
                 $origin_q->execute([$pasteId]);
                 $origin = $origin_q->fetch(PDO::FETCH_ASSOC);
 
+                // Get chain continuations count
+                $chainStmt = $db->prepare("SELECT COUNT(*) as chain_count FROM pastes WHERE parent_paste_id = ?");
+                $chainStmt->execute([$pasteId]);
+                $chainData = $chainStmt->fetch();
+                $paste['chain_count'] = $chainData['chain_count'] ?? 0;
+                $chainCount = $paste['chain_count'];
                 
                 // Get comments count
                 $stmt = $db->prepare("SELECT COUNT(*) as comment_count FROM comments WHERE paste_id = ? AND is_deleted = 0");
@@ -225,6 +227,7 @@ if (empty($pasteId)) {
                 $paste['version_count'] = 1;
                 $paste['fork_count'] = 0;
                 $forkCount = 0;
+                $paste['chain_count'] = 0;
                 $chainCount = 0;
                 $paste['comment_count'] = 0;
                 $comments = [];
@@ -734,7 +737,6 @@ include '../includes/header.php';
             </div>
 
             <!-- Tab Navigation -->
-<?php if ($chainCount > 0 || $forkCount > 0): ?>
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-transparent border-0 p-0">
                     <ul class="nav nav-tabs border-0" id="pasteViewTabs" role="tablist">
@@ -938,7 +940,7 @@ include '../includes/header.php';
                                 <h6 class="fw-semibold mb-3">Chain Continuations</h6>
                                 <?php
                                     $chainList = $db->prepare(
-                                        "SELECT p.*, u.username, u.profile_image FROM pastes p LEFT JOIN users u ON p.user_id = u.id WHERE p.chain_parent_id = ? ORDER BY p.created_at DESC LIMIT 10"
+                                        "SELECT p.*, u.username, u.profile_image FROM pastes p LEFT JOIN users u ON p.user_id = u.id WHERE p.parent_paste_id = ? ORDER BY p.created_at ASC LIMIT 10"
                                     );
                                     $chainList->execute([$pasteId]);
                                     foreach ($chainList as $chain) {
@@ -2056,7 +2058,6 @@ include '../includes/header.php';
 
         </div>
     </div>
-<?php endif; ?>
     <?php endif; ?>
 </main>
 
