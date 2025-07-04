@@ -201,11 +201,8 @@ if (empty($pasteId)) {
                 $origin = $origin_q->fetch(PDO::FETCH_ASSOC);
 
                 // Get chain continuations count
-                $chainStmt = $db->prepare("SELECT COUNT(*) as chain_count FROM pastes WHERE parent_paste_id = ?");
-                $chainStmt->execute([$pasteId]);
-                $chainData = $chainStmt->fetch();
-                $paste['chain_count'] = $chainData['chain_count'] ?? 0;
-                $chainCount = $paste['chain_count'];
+                $chainCount = getChainCount($pasteId);
+                $paste['chain_count'] = $chainCount;
                 
                 // Get comments count
                 $stmt = $db->prepare("SELECT COUNT(*) as comment_count FROM comments WHERE paste_id = ? AND is_deleted = 0");

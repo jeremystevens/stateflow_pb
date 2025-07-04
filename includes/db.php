@@ -503,6 +503,13 @@ function addDiscussionPost($threadId, $content, $username = 'Anonymous') {
     return $db->lastInsertId();
 }
 
+function getChainCount($pasteId) {
+    $db = getDatabase();
+    $stmt = $db->prepare("SELECT COUNT(*) FROM pastes WHERE parent_paste_id = ?");
+    $stmt->execute([$pasteId]);
+    return (int) $stmt->fetchColumn();
+}
+
 function getDiscussionThread($threadId) {
     $db = getDatabase();
     $stmt = $db->prepare("
