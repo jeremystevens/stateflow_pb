@@ -38,6 +38,16 @@ function initializeDatabase($pdo = null) {
     }
 }
 
+function ensureChainParentColumn(PDO $pdo) {
+    $columns = $pdo->query("PRAGMA table_info(pastes)")->fetchAll(PDO::FETCH_ASSOC);
+    foreach ($columns as $column) {
+        if ($column['name'] === 'chain_parent_id') {
+            return; // Column already exists
+        }
+    }
+    $pdo->exec("ALTER TABLE pastes ADD COLUMN chain_parent_id TEXT");
+}
+
 // Run initialization if called directly
 if (basename(__FILE__) == basename($_SERVER['PHP_SELF'])) {
     if (initializeDatabase()) {
