@@ -12,6 +12,7 @@ $success = '';
 $versions = [];
 $forkCount = 0;
 $chainCount = 0;
+$hasFlagged = false;
 
 if (!empty($pasteId)) {
     $paste = getPasteById($pasteId);
@@ -167,6 +168,12 @@ if (empty($pasteId)) {
             try {
                 // Get database connection for additional queries
                 $db = getDatabase();
+
+                // Check if current IP already flagged this paste
+                $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+                $flagCheck = $db->prepare("SELECT 1 FROM paste_flags WHERE paste_id = ? AND ip_address = ? LIMIT 1");
+                $flagCheck->execute([$pasteId, $ip]);
+                $hasFlagged = $flagCheck->fetchColumn() !== false;
                 
                 // Get versions count
                 $stmt = $db->prepare("SELECT COUNT(*) as version_count FROM paste_versions WHERE paste_id = ?");
@@ -612,9 +619,15 @@ include '../includes/header.php';
                             <button class="btn btn-outline-primary btn-sm" onclick="downloadPaste()" title="Download">
                                 <i class="fas fa-download me-1"></i>Download
                             </button>
+                            <?php if ($hasFlagged): ?>
+                            <button class="btn btn-outline-danger btn-sm" disabled>
+                                <i class="fas fa-flag me-1"></i>You already reported this paste
+                            </button>
+                            <?php else: ?>
                             <button class="btn btn-outline-danger btn-sm" onclick="reportPaste('<?php echo $pasteId; ?>')" title="Report">
                                 <i class="fas fa-flag me-1"></i>Report
                             </button>
+                            <?php endif; ?>
                             <div class="dropdown">
                                 <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" title="More Options">
                                     <i class="fas fa-ellipsis-h"></i>
@@ -653,9 +666,15 @@ include '../includes/header.php';
                                         <i class="fas fa-share me-2"></i>Share Paste
                                     </a></li>
                                     <li><hr class="dropdown-divider"></li>
+                                    <?php if ($hasFlagged): ?>
+                                    <li><span class="dropdown-item text-muted disabled">
+                                        <i class="fas fa-flag me-2"></i>You already reported this paste
+                                    </span></li>
+                                    <?php else: ?>
                                     <li><a class="dropdown-item text-danger" href="#" onclick="reportPaste('<?php echo $pasteId; ?>')">
                                         <i class="fas fa-flag me-2"></i>Report Paste
                                     </a></li>
+                                    <?php endif; ?>
                                     <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item" href="create.php?clone=<?php echo $pasteId; ?>">
                                         <i class="fas fa-clone me-2"></i>Clone Paste
