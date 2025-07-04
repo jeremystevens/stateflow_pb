@@ -20,10 +20,14 @@
                             </button>
                         </li>
                         <?php if ($paste['fork_count'] > 0): ?>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link border-0 fw-semibold" id="forks-tab" data-bs-toggle="tab" data-bs-target="#forks" type="button" role="tab">
-                                <i class="fas fa-code-branch me-2"></i>Forks <span class="badge bg-secondary ms-1"><?php echo $paste['fork_count']; ?></span>
-                            </button>
+                        <li class="nav-item">
+                            <a class="nav-link" id="forks-tab" data-bs-toggle="tab" href="#forks" role="tab" aria-controls="forks" aria-selected="false">Forks</a>
+                        </li>
+                        <?php endif; ?>
+
+                        <?php if ($paste['version_count'] > 1): ?>
+                        <li class="nav-item">
+                            <a class="nav-link" id="chain-tab" data-bs-toggle="tab" href="#chain" role="tab" aria-controls="chain" aria-selected="false">Chain</a>
                         </li>
                         <?php endif; ?>
                         <!-- Comments and Discussions tabs - hidden for ZKE pastes without decryption key -->
@@ -84,12 +88,43 @@
                         <div class="tab-pane fade" id="related" role="tabpanel">
                             <div class="p-4">
                                 <h6 class="fw-semibold mb-3">Related Pastes</h6>
-                                <div class="alert alert-info">
-                                    <i class="fas fa-search me-2"></i>
-                                    Smart content discovery based on language, tags, and similarity analysis coming soon!
-                                </div>
+                        <div class="alert alert-info">
+                            <i class="fas fa-search me-2"></i>
+                            Smart content discovery based on language, tags, and similarity analysis coming soon!
+                        </div>
+                        </div>
+                        </div>
+
+                        <!-- Chain Tab -->
+                        <?php if ($paste['version_count'] > 1): ?>
+                        <div class="tab-pane fade" id="chain" role="tabpanel">
+                            <div class="p-4">
+                                <h6 class="fw-semibold mb-3">Chain Continuations</h6>
+                                <?php
+                                    $chainList = $db->prepare(
+                                        "SELECT p.*, u.username, u.profile_image FROM pastes p LEFT JOIN users u ON p.user_id = u.id WHERE p.parent_paste_id = ? ORDER BY p.created_at ASC LIMIT 10"
+                                    );
+                                    $chainList->execute([$pasteId]);
+                                    foreach ($chainList as $chain) {
+                                ?>
+                                    <div class="chain-item mb-3">
+                                        <img src="<?= $chain['profile_image'] ?? '/img/default-avatar.png' ?>" width="30" class="me-2 rounded-circle">
+                                        <strong><?= htmlspecialchars($chain['title']) ?></strong> by <?= htmlspecialchars($chain['username'] ?? 'Anonymous') ?>
+                                        <div class="small text-muted">
+                                            <?= date('M j, Y H:i', $chain['created_at']) ?> — <?= $chain['views'] ?> views
+                                        </div>
+                                        <div>
+                                            <a href="/pages/view.php?id=<?= $chain['id'] ?>" class="me-2">View</a>
+                                            <a href="/pages/create.php?parent=<?= $pasteId ?>">Continue Chain</a>
+                                        </div>
+                                    </div>
+                                <?php } ?>
+                                <?php if ($paste['version_count'] > 10): ?>
+                                    <div class="text-muted">+<?= $paste['version_count'] - 10 ?> more in chain...</div>
+                                <?php endif; ?>
                             </div>
                         </div>
+                        <?php endif; ?>
 
                         <!-- Forks Tab -->
                         <?php if ($paste['fork_count'] > 0): ?>
