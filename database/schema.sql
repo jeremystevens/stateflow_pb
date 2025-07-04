@@ -26,7 +26,6 @@ CREATE TABLE IF NOT EXISTS "pastes" (
         "source_url"    TEXT DEFAULT NULL,
         "imported_from" TEXT DEFAULT NULL,
         "parent_paste_id"       INTEGER DEFAULT NULL,
-        "chain_parent_id" TEXT,
         "ai_summary_id" INTEGER DEFAULT NULL,
         PRIMARY KEY("id")
 );
