@@ -23,11 +23,15 @@ function getDatabase() {
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
         
+        require_once __DIR__ . '/../database/init.php';
+
         // Initialize database if needed
         if (!file_exists($dbPath) || filesize($dbPath) == 0) {
-            require_once __DIR__ . '/../database/init.php';
             initializeDatabase($pdo);
         }
+
+        // Ensure migrations are applied
+        ensureChainParentColumn($pdo);
         
         return $pdo;
     } catch (PDOException $e) {
@@ -147,8 +151,8 @@ function createPasteAdvanced($title, $content, $language, $expiration = null, $v
             INSERT INTO pastes (
                 id, title, content, language, expire_time, created_at,
                 is_public, password, burn_after_read, zero_knowledge, creator_token, visibility,
-                parent_paste_id
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                parent_paste_id, chain_parent_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
         
         $stmt->execute([
@@ -164,6 +168,7 @@ function createPasteAdvanced($title, $content, $language, $expiration = null, $v
             $zeroKnowledge ? 1 : 0,
             $creatorToken,
             $visibility,
+            $parentPasteId,
             $parentPasteId
         ]);
         

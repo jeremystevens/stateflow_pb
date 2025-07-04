@@ -19,8 +19,8 @@ function createPasteAdvanced($db, $title, $content, $language, $userId = null, $
     $slug = bin2hex(random_bytes(8));
     $createdAt = date('Y-m-d H:i:s');
 
-    $stmt = $db->prepare("INSERT INTO pastes (paste_id, title, content, language, user_id, parent_paste_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)");
-    $stmt->execute([$slug, $title, $content, $language, $userId, $parentPasteId, $createdAt]);
+    $stmt = $db->prepare("INSERT INTO pastes (paste_id, title, content, language, user_id, parent_paste_id, chain_parent_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt->execute([$slug, $title, $content, $language, $userId, $parentPasteId, $parentPasteId, $createdAt]);
 
     $pasteId = $slug;
 
