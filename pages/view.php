@@ -971,7 +971,7 @@ include '../includes/header.php';
                                 <h6 class="fw-semibold mb-3">Forks</h6>
                                 <?php
                                     $forkList = $db->prepare(
-                                        "SELECT p.*, u.username, u.profile_image FROM paste_forks f JOIN pastes p ON f.forked_paste_id = p.id LEFT JOIN users u ON f.forked_by_user_id = u.id WHERE f.original_paste_id = ? ORDER BY f.created_at DESC LIMIT 10"
+                                        "SELECT p.*, u.username, u.profile_image FROM paste_forks f JOIN pastes p ON f.forked_paste_id = p.id LEFT JOIN users u ON f.forked_by_user_id = u.id WHERE f.original_paste_id = ? ORDER BY p.created_at DESC LIMIT 10"
                                     );
                                     $forkList->execute([$pasteId]);
                                     foreach ($forkList as $fork) {
