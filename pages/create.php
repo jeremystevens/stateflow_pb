@@ -29,6 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = trim($_POST['password'] ?? '');
     $burnAfterRead = isset($_POST['burn_after_read']);
     $zeroKnowledge = isset($_POST['zero_knowledge']);
+    $pasteAsGuest = isset($_POST['paste_as_guest']);
     $parentPasteId = $_POST['parent_paste_id'] ?? null;
     
     if (empty($content)) {
@@ -66,8 +67,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Hash password if provided
         $hashedPassword = $password ? password_hash($password, PASSWORD_DEFAULT) : null;
-        
-        $result = createPasteAdvanced($title, $content, $language, $expirationDate, $visibility, $hashedPassword, $burnAfterRead, $zeroKnowledge, $parentPasteId);
+
+        $userId = null;
+        if (isset($_SESSION['user_id']) && !$pasteAsGuest) {
+            $userId = $_SESSION['user_id'];
+        }
+
+        $result = createPasteAdvanced($title, $content, $language, $expirationDate, $visibility, $hashedPassword, $burnAfterRead, $zeroKnowledge, $parentPasteId, $userId);
         
         if ($result) {
             // Handle different return formats for compatibility
@@ -337,6 +343,13 @@ include '../includes/header.php';
                                         <label class="form-check-label" for="burnAfterRead">
                                             <i class="fas fa-fire me-1 text-danger"></i>Burn After Read
                                             <small class="d-block text-muted">Delete after first view</small>
+                                        </label>
+                                    </div>
+                                    <div class="form-check mt-2">
+                                        <input class="form-check-input" type="checkbox" id="pasteAsGuest" name="paste_as_guest">
+                                        <label class="form-check-label" for="pasteAsGuest">
+                                            <i class="fas fa-user-secret me-1"></i>Paste as a guest
+                                            <small class="d-block text-muted">Post anonymously even while logged in.</small>
                                         </label>
                                     </div>
                                 </div>
