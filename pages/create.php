@@ -158,7 +158,7 @@ include '../includes/header.php';
     <div class="row justify-content-center">
         <div class="col-lg-10">
             <div class="card border-0 shadow-lg">
-                <div class="card-header border-0 bg-primary text-white py-3">
+                <div class="card-header border-0 text-white py-3" style="background-color: #334155;">
                     <div class="d-flex justify-content-between align-items-center">
                         <h4 class="mb-0">
                             <i class="fas fa-plus me-2"></i>Create Paste

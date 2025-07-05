@@ -536,6 +536,25 @@ function handleBurnAfterReadToggle() {
     }
 }
 
+// Password visibility toggle for login and register forms
+function initPasswordToggles() {
+    const toggles = document.querySelectorAll('.toggle-password');
+    toggles.forEach(toggle => {
+        toggle.addEventListener('click', () => {
+            const targetSelector = toggle.getAttribute('data-target');
+            const input = document.querySelector(targetSelector);
+            const icon = toggle.querySelector('i');
+
+            if (input && icon) {
+                const isPassword = input.getAttribute('type') === 'password';
+                input.setAttribute('type', isPassword ? 'text' : 'password');
+                icon.classList.toggle('fa-eye');
+                icon.classList.toggle('fa-eye-slash');
+            }
+        });
+    });
+}
+
 // Initialize Application
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize all components
@@ -551,6 +570,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('burnAfterRead')) {
         handleBurnAfterReadToggle();
     }
+
+    // Initialize password visibility toggles
+    initPasswordToggles();
 
     // Add smooth loading effect
     document.body.style.opacity = '0';
