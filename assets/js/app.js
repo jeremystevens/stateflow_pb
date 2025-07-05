@@ -538,23 +538,18 @@ function handleBurnAfterReadToggle() {
 
 // Password visibility toggle for login and register forms
 function initPasswordToggles() {
-    const toggleIcons = document.querySelectorAll('.toggle-password');
+    const toggles = document.querySelectorAll('.toggle-password');
+    toggles.forEach(toggle => {
+        toggle.addEventListener('click', () => {
+            const targetSelector = toggle.getAttribute('data-target');
+            const input = document.querySelector(targetSelector);
+            const icon = toggle.querySelector('i');
 
-    toggleIcons.forEach(icon => {
-        icon.addEventListener('click', function () {
-            const input = this.previousElementSibling;
-            if (!input) return;
-
-            if (input.type === 'password') {
-                input.type = 'text';
-            } else {
-                input.type = 'password';
-            }
-
-            const inner = this.querySelector('i');
-            if (inner) {
-                inner.classList.toggle('fa-eye');
-                inner.classList.toggle('fa-eye-slash');
+            if (input && icon) {
+                const isPassword = input.getAttribute('type') === 'password';
+                input.setAttribute('type', isPassword ? 'text' : 'password');
+                icon.classList.toggle('fa-eye');
+                icon.classList.toggle('fa-eye-slash');
             }
         });
     });
