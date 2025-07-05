@@ -39,23 +39,29 @@ include 'includes/header.php';
                     <h4 class="mb-0"><i class="fas fa-user-plus me-2"></i>Create Account</h4>
                 </div>
                 <div class="card-body p-4">
+                    <div class="text-center mb-4 d-none d-md-block">
+                        <i class="fas fa-user-plus fa-5x text-primary"></i>
+                    </div>
                     <?php if ($success): ?>
                         <div class="alert alert-success">Account created successfully!</div>
                     <?php elseif ($error): ?>
                         <div class="alert alert-danger"><?php echo htmlspecialchars($error); ?></div>
                     <?php endif; ?>
                     <form method="POST" action="register.php" class="needs-validation" novalidate>
-                        <div class="mb-3 form-group">
-                            <label for="username" class="form-label">Username *</label>
-                            <input type="text" class="form-control" name="username" id="username" required>
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control" name="username" id="username" placeholder="Username" required>
+                            <label for="username">Username *</label>
                         </div>
-                        <div class="mb-3 form-group">
-                            <label for="email" class="form-label">Email (optional)</label>
-                            <input type="email" class="form-control" name="email" id="email">
+                        <div class="form-floating mb-3">
+                            <input type="email" class="form-control" name="email" id="email" placeholder="Email">
+                            <label for="email">Email (optional)</label>
                         </div>
-                        <div class="mb-3 form-group">
-                            <label for="password" class="form-label">Password *</label>
-                            <input type="password" class="form-control" name="password" id="password" required>
+                        <div class="form-floating mb-4 position-relative">
+                            <input type="password" class="form-control" name="password" id="password" placeholder="Password" required>
+                            <label for="password">Password *</label>
+                            <span class="position-absolute top-50 end-0 translate-middle-y me-3 toggle-password" data-target="#password">
+                                <i class="fas fa-eye"></i>
+                            </span>
                         </div>
                         <button type="submit" class="btn btn-primary w-100">Sign Up</button>
                     </form>
