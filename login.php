@@ -50,11 +50,11 @@ include 'includes/header.php';
                             <label for="username">Username *</label>
                         </div>
                         <div class="form-floating mb-4 position-relative">
-                            <input type="password" class="form-control" name="password" id="password" placeholder="Password" required>
-                            <span class="position-absolute top-50 end-0 translate-middle-y me-3 toggle-password" data-target="#password">
+                            <input type="password" class="form-control" name="password" id="login-password" placeholder="Password" required>
+                            <span class="position-absolute top-50 end-0 translate-middle-y me-3 toggle-password" data-target="#login-password">
                                 <i class="fas fa-eye"></i>
                             </span>
-                            <label for="password">Password *</label>
+                            <label for="login-password">Password *</label>
                         </div>
                         <button type="submit" class="btn btn-primary w-100">Login</button>
                     </form>
