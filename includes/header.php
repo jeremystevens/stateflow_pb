@@ -55,6 +55,16 @@
                             <i class="fas fa-clock me-1"></i>Recent Pastes
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class="fas fa-sign-in-alt me-1"></i>Login
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class="fas fa-user-plus me-1"></i>Sign Up
+                        </a>
+                    </li>
                 </ul>
 
                 <!-- Dark Mode Toggle -->
