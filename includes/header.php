@@ -1,3 +1,20 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+if (!isset($pdo)) {
+    require_once __DIR__ . '/db.php';
+}
+$userData = null;
+if (isset($_SESSION['user_id'])) {
+    $stmt = $pdo->prepare("SELECT username, profile_image FROM users WHERE id = ?");
+    $stmt->execute([$_SESSION['user_id']]);
+    $userData = $stmt->fetch();
+    if ($userData) {
+        $userData['avatar'] = $userData['profile_image'] ?: '/img/default-avatar.svg';
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="light">
 <head>
@@ -55,6 +72,17 @@
                             <i class="fas fa-clock me-1"></i>Recent Pastes
                         </a>
                     </li>
+<?php if ($userData): ?>
+                    <li class="nav-item d-lg-none dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="mobileUserDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img src="<?php echo htmlspecialchars($userData['avatar']); ?>" width="24" height="24" class="rounded-circle me-2">
+                            <?php echo htmlspecialchars($userData['username']); ?>
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="mobileUserDropdown">
+                            <li><span class="dropdown-item">Coming Soon</span></li>
+                        </ul>
+                    </li>
+<?php else: ?>
                     <li class="nav-item d-lg-none">
                         <a class="nav-link" href="/login.php">
                             <i class="fas fa-sign-in-alt me-1"></i>Login
@@ -65,6 +93,7 @@
                             <i class="fas fa-user-plus me-1"></i>Sign Up
                         </a>
                     </li>
+<?php endif; ?>
                 </ul>
 
                 <!-- Dark Mode Toggle and Auth Buttons -->
@@ -73,8 +102,20 @@
                         <i class="fas fa-moon" id="themeIcon"></i>
                     </button>
                     <div class="d-none d-lg-flex align-items-center">
+<?php if ($userData): ?>
+                        <div class="dropdown">
+                            <a href="#" class="nav-link dropdown-toggle d-flex align-items-center" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <img src="<?php echo htmlspecialchars($userData['avatar']); ?>" width="30" height="30" class="rounded-circle me-2">
+                                <span><?php echo htmlspecialchars($userData['username']); ?></span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                <li><span class="dropdown-item">Coming Soon</span></li>
+                            </ul>
+                        </div>
+<?php else: ?>
                         <a href="/login.php" class="nav-link me-2"><i class="fas fa-sign-in-alt"></i> Login</a>
                         <a href="/register.php" class="nav-link"><i class="fas fa-user-plus"></i> Sign Up</a>
+<?php endif; ?>
                     </div>
                 </div>
             </div>
