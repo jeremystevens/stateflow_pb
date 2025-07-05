@@ -79,7 +79,11 @@ if (isset($_SESSION['user_id'])) {
                             <?php echo htmlspecialchars($userData['username']); ?>
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="mobileUserDropdown">
-                            <li><span class="dropdown-item">Coming Soon</span></li>
+                            <li>
+                                <a class="dropdown-item" href="/profile/edit_profile.php">
+                                    <i class="fas fa-user-edit me-2"></i>Edit Profile
+                                </a>
+                            </li>
                         </ul>
                     </li>
 <?php else: ?>
@@ -109,7 +113,11 @@ if (isset($_SESSION['user_id'])) {
                                 <span><?php echo htmlspecialchars($userData['username']); ?></span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                                <li><span class="dropdown-item">Coming Soon</span></li>
+                                <li>
+                                    <a class="dropdown-item" href="/profile/edit_profile.php">
+                                        <i class="fas fa-user-edit me-2"></i>Edit Profile
+                                    </a>
+                                </li>
                             </ul>
                         </div>
 <?php else: ?>
