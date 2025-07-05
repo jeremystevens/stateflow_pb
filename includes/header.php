@@ -55,13 +55,13 @@
                             <i class="fas fa-clock me-1"></i>Recent Pastes
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">
+                    <li class="nav-item d-lg-none">
+                        <a class="nav-link" href="/login.php">
                             <i class="fas fa-sign-in-alt me-1"></i>Login
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">
+                    <li class="nav-item d-lg-none">
+                        <a class="nav-link" href="/register.php">
                             <i class="fas fa-user-plus me-1"></i>Sign Up
                         </a>
                     </li>
@@ -72,6 +72,10 @@
                     <button class="btn btn-outline-light btn-sm me-2" id="themeToggle" type="button">
                         <i class="fas fa-moon" id="themeIcon"></i>
                     </button>
+                </div>
+                <div class="d-none d-lg-flex align-items-center ms-auto">
+                    <a href="/login.php" class="nav-link"><i class="fas fa-sign-in-alt"></i> Login</a>
+                    <a href="/register.php" class="nav-link"><i class="fas fa-user-plus"></i> Sign Up</a>
                 </div>
             </div>
         </div>
