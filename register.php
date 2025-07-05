@@ -35,7 +35,7 @@ include 'includes/header.php';
     <div class="row justify-content-center">
         <div class="col-md-6 col-lg-5">
             <div class="card border-0 shadow-lg">
-                <div class="card-header border-0 bg-primary text-white py-3">
+                <div class="card-header border-0 text-white py-3" style="background-color: #334155;">
                     <h4 class="mb-0"><i class="fas fa-user-plus me-2"></i>Create Account</h4>
                 </div>
                 <div class="card-body p-4">
