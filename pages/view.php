@@ -691,7 +691,11 @@ include '../includes/header.php';
                     </div>
                     
                     <!-- Metadata Row -->
-                    <div class="d-flex flex-wrap gap-3 text-muted small">
+                    <div class="d-flex flex-wrap gap-3 text-muted small align-items-center">
+                        <span class="d-flex align-items-center">
+                            <img src="<?php echo htmlspecialchars($paste['profile_image'] ?: '/img/default-avatar.svg'); ?>" alt="Avatar" class="rounded-circle me-1" width="24" height="24">
+                            <?php echo htmlspecialchars($paste['username'] ?? 'Anonymous'); ?>
+                        </span>
                         <span class="badge bg-primary-subtle text-primary px-3 py-2">
                             <i class="fas fa-code me-1"></i>
                             <?php echo htmlspecialchars($paste['language']); ?>
@@ -946,7 +950,7 @@ include '../includes/header.php';
                                     foreach ($chainList as $chain) {
                                 ?>
                                     <div class="chain-item mb-3">
-                                        <img src="<?= $chain['profile_image'] ?? '/img/default-avatar.png' ?>" width="30" class="me-2 rounded-circle">
+                                        <img src="<?= $chain['profile_image'] ?? '/img/default-avatar.svg' ?>" width="30" class="me-2 rounded-circle">
                                         <strong><?= htmlspecialchars($chain['title']) ?></strong> by <?= htmlspecialchars($chain['username'] ?? 'Anonymous') ?>
                                         <div class="small text-muted">
                                             <?= date('M j, Y H:i', $chain['created_at']) ?> — <?= $chain['views'] ?> views
@@ -977,7 +981,7 @@ include '../includes/header.php';
                                     foreach ($forkList as $fork) {
                                 ?>
                                     <div class="fork-item mb-3">
-                                        <img src="<?= $fork['profile_image'] ?? '/img/default-avatar.png' ?>" width="30" class="me-2 rounded-circle">
+                                        <img src="<?= $fork['profile_image'] ?? '/img/default-avatar.svg' ?>" width="30" class="me-2 rounded-circle">
                                         <strong><?= htmlspecialchars($fork['title']) ?></strong> by <?= htmlspecialchars($fork['username'] ?? 'Anonymous') ?>
                                         <div class="small text-muted">
                                             <?= date('M j, Y H:i', $fork['created_at']) ?> — <?= $fork['views'] ?> views
