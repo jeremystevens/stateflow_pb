@@ -1079,6 +1079,37 @@ html {
 .dropdown-menu {
     z-index: 9999 !important;
     position: absolute !important;
+    border-radius: 12px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    transition: var(--transition);
+    padding: 8px 0;
+    min-width: 180px;
+    opacity: 0;
+    transform: translateY(10px);
+}
+
+.dropdown-menu.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+[data-bs-theme="dark"] .dropdown-menu {
+    background: rgba(40, 44, 52, 0.95);
+}
+
+.dropdown-menu a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.dropdown-menu a:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
 }
 
 /* Ensure parent containers don't clip dropdowns */
