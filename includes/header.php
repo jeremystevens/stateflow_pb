@@ -90,6 +90,11 @@ if (isset($_SESSION['user_id'])) {
                                     <i class="fas fa-user-edit me-2"></i>Edit Profile
                                 </a>
                             </li>
+                            <li>
+                                <a class="dropdown-item" href="/profile/profile.php">
+                                    <i class="fa fa-user"></i> View Profile
+                                </a>
+                            </li>
                         </ul>
                     </li>
 <?php else: ?>
@@ -122,6 +127,11 @@ if (isset($_SESSION['user_id'])) {
                                 <li>
                                     <a class="dropdown-item" href="/profile/edit_profile.php">
                                         <i class="fas fa-user-edit me-2"></i>Edit Profile
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="/profile/profile.php">
+                                        <i class="fa fa-user"></i> View Profile
                                     </a>
                                 </li>
                             </ul>
