@@ -693,7 +693,13 @@ include '../includes/header.php';
                     <!-- Metadata Row -->
                     <div class="d-flex flex-wrap gap-3 text-muted small align-items-center">
                         <span class="d-flex align-items-center">
-                            <img src="<?php echo htmlspecialchars($paste['profile_image'] ?: '/img/default-avatar.svg'); ?>" alt="Avatar" class="rounded-circle me-1" width="24" height="24">
+                            <?php
+                                $avatarPath = '/img/default-avatar.svg';
+                                if (!empty($paste['profile_image'])) {
+                                    $avatarPath = '/uploads/avatars/' . $paste['profile_image'];
+                                }
+                            ?>
+                            <img src="<?php echo htmlspecialchars($avatarPath); ?>" alt="Avatar" class="rounded-circle me-1" width="24" height="24">
                             <?php echo htmlspecialchars($paste['username'] ?? 'Anonymous'); ?>
                         </span>
                         <span class="badge bg-primary-subtle text-primary px-3 py-2">
@@ -950,7 +956,13 @@ include '../includes/header.php';
                                     foreach ($chainList as $chain) {
                                 ?>
                                     <div class="chain-item mb-3">
-                                        <img src="<?= $chain['profile_image'] ?? '/img/default-avatar.svg' ?>" width="30" class="me-2 rounded-circle">
+                                        <?php
+                                            $chainAvatar = '/img/default-avatar.svg';
+                                            if (!empty($chain['profile_image'])) {
+                                                $chainAvatar = '/uploads/avatars/' . $chain['profile_image'];
+                                            }
+                                        ?>
+                                        <img src="<?= htmlspecialchars($chainAvatar); ?>" width="30" class="me-2 rounded-circle">
                                         <strong><?= htmlspecialchars($chain['title']) ?></strong> by <?= htmlspecialchars($chain['username'] ?? 'Anonymous') ?>
                                         <div class="small text-muted">
                                             <?= date('M j, Y H:i', $chain['created_at']) ?> — <?= $chain['views'] ?> views
@@ -981,7 +993,13 @@ include '../includes/header.php';
                                     foreach ($forkList as $fork) {
                                 ?>
                                     <div class="fork-item mb-3">
-                                        <img src="<?= $fork['profile_image'] ?? '/img/default-avatar.svg' ?>" width="30" class="me-2 rounded-circle">
+                                        <?php
+                                            $forkAvatar = '/img/default-avatar.svg';
+                                            if (!empty($fork['profile_image'])) {
+                                                $forkAvatar = '/uploads/avatars/' . $fork['profile_image'];
+                                            }
+                                        ?>
+                                        <img src="<?= htmlspecialchars($forkAvatar); ?>" width="30" class="me-2 rounded-circle">
                                         <strong><?= htmlspecialchars($fork['title']) ?></strong> by <?= htmlspecialchars($fork['username'] ?? 'Anonymous') ?>
                                         <div class="small text-muted">
                                             <?= date('M j, Y H:i', $fork['created_at']) ?> — <?= $fork['views'] ?> views
