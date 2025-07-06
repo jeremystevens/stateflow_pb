@@ -11,7 +11,13 @@ if (isset($_SESSION['user_id'])) {
     $stmt->execute([$_SESSION['user_id']]);
     $userData = $stmt->fetch();
     if ($userData) {
-        $userData['avatar'] = $userData['profile_image'] ?: '/img/default-avatar.svg';
+        if (!isset($_SESSION['avatar']) && $userData['profile_image']) {
+            $_SESSION['avatar'] = $userData['profile_image'];
+        }
+        $avatarFile = $_SESSION['avatar'] ?? $userData['profile_image'];
+        $userData['avatar'] = $avatarFile
+            ? '/uploads/avatars/' . $avatarFile
+            : '/img/default-avatar.svg';
     }
 }
 ?>
@@ -75,11 +81,15 @@ if (isset($_SESSION['user_id'])) {
 <?php if ($userData): ?>
                     <li class="nav-item d-lg-none dropdown">
                         <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="mobileUserDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <img src="<?php echo htmlspecialchars($userData['avatar']); ?>" width="24" height="24" class="rounded-circle me-2">
+                            <img src="/uploads/avatars/<?php echo htmlspecialchars($_SESSION['avatar'] ?? 'default-avatar.svg'); ?>" width="24" height="24" class="rounded-circle me-2">
                             <?php echo htmlspecialchars($userData['username']); ?>
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="mobileUserDropdown">
-                            <li><span class="dropdown-item">Coming Soon</span></li>
+                            <li>
+                                <a class="dropdown-item" href="/profile/edit_profile.php">
+                                    <i class="fas fa-user-edit me-2"></i>Edit Profile
+                                </a>
+                            </li>
                         </ul>
                     </li>
 <?php else: ?>
@@ -105,11 +115,15 @@ if (isset($_SESSION['user_id'])) {
 <?php if ($userData): ?>
                         <div class="dropdown">
                             <a href="#" class="nav-link dropdown-toggle d-flex align-items-center" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                <img src="<?php echo htmlspecialchars($userData['avatar']); ?>" width="30" height="30" class="rounded-circle me-2">
+                                <img src="/uploads/avatars/<?php echo htmlspecialchars($_SESSION['avatar'] ?? 'default-avatar.svg'); ?>" width="30" height="30" class="rounded-circle me-2">
                                 <span><?php echo htmlspecialchars($userData['username']); ?></span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                                <li><span class="dropdown-item">Coming Soon</span></li>
+                                <li>
+                                    <a class="dropdown-item" href="/profile/edit_profile.php">
+                                        <i class="fas fa-user-edit me-2"></i>Edit Profile
+                                    </a>
+                                </li>
                             </ul>
                         </div>
 <?php else: ?>
