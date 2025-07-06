@@ -30,10 +30,10 @@ include '../includes/header.php';
                     <div class="text-center mb-4">
                         <img id="avatarPreview" src="<?php echo htmlspecialchars($avatar); ?>" alt="Avatar" class="rounded-circle" width="120" height="120">
                     </div>
-                    <form id="profileForm" class="needs-validation" novalidate>
+                    <form id="profileForm" action="/profile/save_profile.php" method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
                         <div class="mb-3">
                             <label for="profileImage" class="form-label">Profile Picture</label>
-                            <input type="file" class="form-control" id="profileImage" accept="image/png, image/jpeg, image/gif">
+                            <input type="file" class="form-control" id="profileImage" name="avatar" accept="image/png, image/jpeg, image/gif">
                             <div class="form-text">JPG, PNG or GIF only.</div>
                         </div>
                         <div class="form-floating mb-3">
@@ -45,6 +45,7 @@ include '../includes/header.php';
                             <input type="url" class="form-control" id="website" name="website" placeholder="https://example.com" value="<?php echo htmlspecialchars($website); ?>">
                             <label for="website">Website</label>
                         </div>
+                        <div id="alertBox" class="alert d-none" role="alert"></div>
                         <button type="submit" class="btn btn-primary w-100">Save Changes</button>
                     </form>
                 </div>
@@ -61,16 +62,37 @@ document.getElementById('profileImage').addEventListener('change', function(e) {
     }
 });
 
-// Show success toast on submit
 const form = document.getElementById('profileForm');
+const alertBox = document.getElementById('alertBox');
 form.addEventListener('submit', function(e) {
     e.preventDefault();
-    const toast = document.createElement('div');
-    toast.className = 'alert alert-success alert-dismissible fade show position-fixed top-0 end-0 m-3';
-    toast.style.zIndex = '9999';
-    toast.innerHTML = 'Profile updated successfully!<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
-    document.body.appendChild(toast);
-    setTimeout(() => { if (toast.parentNode) toast.remove(); }, 3000);
+    const formData = new FormData(form);
+
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+    fetch('/profile/save_profile.php', {
+        method: 'POST',
+        body: formData,
+    })
+    .then(response => response.json())
+    .then(data => {
+        alertBox.classList.remove('d-none');
+        alertBox.classList.remove('alert-success', 'alert-danger');
+        alertBox.classList.add('alert-' + (data.success ? 'success' : 'danger'));
+        alertBox.textContent = data.message;
+        submitBtn.innerHTML = 'Save Changes';
+        submitBtn.disabled = false;
+    })
+    .catch(() => {
+        alertBox.classList.remove('d-none');
+        alertBox.classList.remove('alert-success', 'alert-danger');
+        alertBox.classList.add('alert-danger');
+        alertBox.textContent = 'An unexpected error occurred.';
+        submitBtn.innerHTML = 'Save Changes';
+        submitBtn.disabled = false;
+    });
 });
 </script>
 <?php include '../includes/footer.php'; ?>
