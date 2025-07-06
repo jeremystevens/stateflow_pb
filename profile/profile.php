@@ -1,6 +1,6 @@
 <?php
-include('../include/config.php');
-include('../include/session.php');
+include(__DIR__ . '/../include/config.php');
+include(__DIR__ . '/../include/session.php');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -11,10 +11,13 @@ include('../include/session.php');
     <link rel="stylesheet" href="/assets/css/style.css">
 </head>
 <body>
-    <?php include('../include/navbar.php'); ?>
-    <div class="container">
-        <h1><i class="fa fa-user"></i> User Profile</h1>
-        <p>This page is under construction.</p>
-    </div>
+    <?php include(__DIR__ . '/../include/navbar.php'); ?>
+    <main>
+        <div class="container mt-5">
+            <h1 class="text-white">User Profile</h1>
+            <p class="text-light">This page is under construction.</p>
+        </div>
+    </main>
+    <?php include(__DIR__ . '/../include/footer.php'); ?>
 </body>
 </html>
