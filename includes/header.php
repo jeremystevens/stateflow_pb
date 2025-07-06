@@ -92,7 +92,7 @@ if (isset($_SESSION['user_id'])) {
                             </li>
                             <li>
                                 <a class="dropdown-item" href="/profile/profile.php">
-                                    <i class="fa fa-user"></i> Edit Profile
+                                    <i class="fa fa-user"></i> View Profile
                                 </a>
                             </li>
                         </ul>
@@ -131,7 +131,7 @@ if (isset($_SESSION['user_id'])) {
                                 </li>
                                 <li>
                                     <a class="dropdown-item" href="/profile/profile.php">
-                                        <i class="fa fa-user"></i> Edit Profile
+                                        <i class="fa fa-user"></i> View Profile
                                     </a>
                                 </li>
                             </ul>
