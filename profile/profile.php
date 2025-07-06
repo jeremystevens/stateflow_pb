@@ -76,16 +76,24 @@ include __DIR__ . '/../includes/header.php';
                 <div class="card-header bg-transparent border-0 p-0">
                     <ul class="nav nav-tabs border-0" id="profileTabs" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link active border-0 fw-semibold" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">Overview</button>
+                            <button class="nav-link active border-0 fw-semibold" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
+                                <i class="fas fa-chart-bar me-2"></i>Overview
+                            </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link border-0 fw-semibold" id="achievements-tab" data-bs-toggle="tab" data-bs-target="#achievements" type="button" role="tab">Achievements</button>
+                            <button class="nav-link border-0 fw-semibold" id="achievements-tab" data-bs-toggle="tab" data-bs-target="#achievements" type="button" role="tab">
+                                <i class="fas fa-trophy me-2"></i>Achievements
+                            </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link border-0 fw-semibold" id="collections-tab" data-bs-toggle="tab" data-bs-target="#collections" type="button" role="tab">Collections</button>
+                            <button class="nav-link border-0 fw-semibold" id="collections-tab" data-bs-toggle="tab" data-bs-target="#collections" type="button" role="tab">
+                                <i class="fas fa-folder-open me-2"></i>Collections
+                            </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link border-0 fw-semibold" id="pastes-tab" data-bs-toggle="tab" data-bs-target="#pastes" type="button" role="tab">Recent Pastes</button>
+                            <button class="nav-link border-0 fw-semibold" id="pastes-tab" data-bs-toggle="tab" data-bs-target="#pastes" type="button" role="tab">
+                                <i class="fas fa-code me-2"></i>Recent Pastes
+                            </button>
                         </li>
                     </ul>
                 </div>
