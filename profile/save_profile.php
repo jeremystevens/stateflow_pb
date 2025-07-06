@@ -65,6 +65,7 @@ try {
     if ($avatarFilename) {
         $stmt = $pdo->prepare('UPDATE users SET profile_image = ?, tagline = ?, website = ? WHERE id = ?');
         $stmt->execute([$avatarFilename, $tagline ?: null, $website ?: null, $userId]);
+        $_SESSION['avatar'] = $avatarFilename;
     } else {
         $stmt = $pdo->prepare('UPDATE users SET tagline = ?, website = ? WHERE id = ?');
         $stmt->execute([$tagline ?: null, $website ?: null, $userId]);

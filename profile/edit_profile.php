@@ -12,7 +12,9 @@ $stmt = $pdo->prepare("SELECT username, profile_image, tagline, website FROM use
 $stmt->execute([$_SESSION['user_id']]);
 $user = $stmt->fetch();
 
-$avatar = $user['profile_image'] ?: '/img/default-avatar.svg';
+$avatar = $user['profile_image']
+    ? '/uploads/avatars/' . $user['profile_image']
+    : '/img/default-avatar.svg';
 $tagline = $user['tagline'] ?? '';
 $website = $user['website'] ?? '';
 
@@ -64,35 +66,35 @@ document.getElementById('profileImage').addEventListener('change', function(e) {
 
 const form = document.getElementById('profileForm');
 const alertBox = document.getElementById('alertBox');
-form.addEventListener('submit', function(e) {
+form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const formData = new FormData(form);
-
     const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Processing...';
     submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
 
-    fetch('/profile/save_profile.php', {
-        method: 'POST',
-        body: formData,
-    })
-    .then(response => response.json())
-    .then(data => {
-        alertBox.classList.remove('d-none');
-        alertBox.classList.remove('alert-success', 'alert-danger');
-        alertBox.classList.add('alert-' + (data.success ? 'success' : 'danger'));
-        alertBox.textContent = data.message;
-        submitBtn.innerHTML = 'Save Changes';
-        submitBtn.disabled = false;
-    })
-    .catch(() => {
-        alertBox.classList.remove('d-none');
-        alertBox.classList.remove('alert-success', 'alert-danger');
+    try {
+        const response = await fetch(form.action, {
+            method: 'POST',
+            body: formData
+        });
+        const result = await response.json();
+
+        alertBox.classList.remove('d-none', 'alert-success', 'alert-danger');
+        if (result.success) {
+            alertBox.classList.add('alert-success');
+        } else {
+            alertBox.classList.add('alert-danger');
+        }
+        alertBox.innerText = result.message || 'An error occurred.';
+    } catch (error) {
+        alertBox.classList.remove('d-none', 'alert-success');
         alertBox.classList.add('alert-danger');
-        alertBox.textContent = 'An unexpected error occurred.';
-        submitBtn.innerHTML = 'Save Changes';
-        submitBtn.disabled = false;
-    });
+        alertBox.innerText = 'An unexpected error occurred.';
+    }
+
+    submitBtn.innerHTML = 'Save Changes';
+    submitBtn.disabled = false;
 });
 </script>
 <?php include '../includes/footer.php'; ?>
