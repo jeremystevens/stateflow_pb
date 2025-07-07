@@ -119,73 +119,74 @@ include __DIR__ . '/../includes/header.php';
                 <div class="card-body">
                     <div class="tab-content" id="profileTabsContent">
                         <div class="tab-pane fade show active" id="overview" role="tabpanel">
-                            <div class="row g-3 mb-4 text-center">
+                            <div class="row g-3 mb-4 justify-content-center">
                                 <div class="col-6 col-md-4">
-                                    <div class="p-3 rounded text-white bg-primary h-100">
-                                        <i class="fas fa-file-code fa-2x"></i>
-                                        <div class="fw-bold mt-2"><?= $totalPastes ?></div>
-                                        <small>Total Pastes</small>
+                                    <div class="stat-card shadow-lg h-100">
+                                        <div class="stat-icon text-primary mb-2">
+                                            <i class="fas fa-file-code"></i>
+                                        </div>
+                                        <div class="stat-value mb-1"><?= $totalPastes ?></div>
+                                        <div class="stat-label">Total Pastes</div>
                                     </div>
                                 </div>
                                 <div class="col-6 col-md-4">
-                                    <div class="p-3 rounded text-white bg-success h-100">
-                                        <i class="fas fa-eye fa-2x"></i>
-                                        <div class="fw-bold mt-2"><?= $totalViews ?></div>
-                                        <small>Total Views</small>
+                                    <div class="stat-card shadow-lg h-100">
+                                        <div class="stat-icon text-success mb-2">
+                                            <i class="fas fa-eye"></i>
+                                        </div>
+                                        <div class="stat-value mb-1"><?= $totalViews ?></div>
+                                        <div class="stat-label">Total Views</div>
                                     </div>
                                 </div>
                                 <div class="col-6 col-md-4">
-                                    <div class="p-3 rounded text-white bg-danger h-100">
-                                        <i class="fas fa-heart fa-2x"></i>
-                                        <div class="fw-bold mt-2"><?= $totalLikes ?></div>
-                                        <small>Total Likes</small>
+                                    <div class="stat-card shadow-lg h-100">
+                                        <div class="stat-icon text-danger mb-2">
+                                            <i class="fas fa-heart"></i>
+                                        </div>
+                                        <div class="stat-value mb-1"><?= $totalLikes ?></div>
+                                        <div class="stat-label">Total Likes</div>
                                     </div>
                                 </div>
                                 <div class="col-6 col-md-4">
-                                    <div class="p-3 rounded text-white bg-info h-100">
-                                        <i class="fas fa-users fa-2x"></i>
-                                        <div class="fw-bold mt-2"><?= $followers ?></div>
-                                        <small>Followers</small>
+                                    <div class="stat-card shadow-lg h-100">
+                                        <div class="stat-icon text-info mb-2">
+                                            <i class="fas fa-users"></i>
+                                        </div>
+                                        <div class="stat-value mb-1"><?= $followers ?></div>
+                                        <div class="stat-label">Followers</div>
                                     </div>
                                 </div>
                                 <div class="col-6 col-md-4">
-                                    <div class="p-3 rounded text-white bg-warning h-100">
-                                        <i class="fas fa-user-plus fa-2x"></i>
-                                        <div class="fw-bold mt-2"><?= $following ?></div>
-                                        <small>Following</small>
+                                    <div class="stat-card shadow-lg h-100">
+                                        <div class="stat-icon text-warning mb-2">
+                                            <i class="fas fa-user-plus"></i>
+                                        </div>
+                                        <div class="stat-value mb-1"><?= $following ?></div>
+                                        <div class="stat-label">Following</div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="card shadow-sm">
-                                <div class="card-header">
-                                    <h6 class="mb-0"><i class="fas fa-user me-2"></i>Profile Summary</h6>
+                            <div class="profile-summary-card p-4 mb-4">
+                                <div class="d-flex align-items-center mb-3">
+                                    <i class="fas fa-user me-2"></i>
+                                    <span class="summary-title">Profile Summary</span>
                                 </div>
-                                <ul class="list-group list-group-flush">
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <span>Account Status</span>
-                                        <span class="fw-semibold">Active Member</span>
-                                    </li>
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <span>Join Date</span>
-                                        <span class="fw-semibold"><?= date('F j, Y', is_numeric($user['created_at']) ? (int)$user['created_at'] : strtotime($user['created_at'])) ?></span>
-                                    </li>
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <span>Activity</span>
-                                        <span class="fw-semibold">Regular contributor</span>
-                                    </li>
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <span>Total Engagement</span>
-                                        <span class="fw-semibold"><?= $totalEngagement ?></span>
-                                    </li>
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <span>Average Views</span>
-                                        <span class="fw-semibold"><?= $avgViews ?></span>
-                                    </li>
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <span>Social Reach</span>
-                                        <span class="fw-semibold"><?= $followers ?></span>
-                                    </li>
-                                </ul>
+                                <div class="summary-grid">
+                                    <span>Account Status</span>
+                                    <span class="fw-semibold text-end">Active Member</span>
+                                    <span>Join Date</span>
+                                    <span class="fw-semibold text-end"><?= date('F j, Y', is_numeric($user['created_at']) ? (int)$user['created_at'] : strtotime($user['created_at'])) ?></span>
+                                    <span>Activity</span>
+                                    <span class="fw-semibold text-end">Regular contributor</span>
+                                    <span>Total Engagement</span>
+                                    <span class="fw-semibold text-end" data-bs-toggle="tooltip" title="Views + Likes">
+                                        <?= $totalEngagement ?>
+                                    </span>
+                                    <span>Average Views</span>
+                                    <span class="fw-semibold text-end"><?= $avgViews ?></span>
+                                    <span>Social Reach</span>
+                                    <span class="fw-semibold text-end"><?= $followers ?></span>
+                                </div>
                             </div>
                         </div>
                         <div class="tab-pane fade" id="achievements" role="tabpanel">...</div>
