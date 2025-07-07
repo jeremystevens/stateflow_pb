@@ -1,0 +1,38 @@
+<?php
+// database/cleanup_orphan_references.php
+//require_once 'include/config.php';
+require_once 'db.php';
+try {
+    $pdo = new PDO("sqlite:" . DB_PATH);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    // Clean up orphaned forks
+    $stmt = $pdo->query("SELECT id, fork_id FROM paste_forks");
+    $forks = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    foreach ($forks as $fork) {
+        $check = $pdo->prepare("SELECT COUNT(*) FROM pastes WHERE id = ?");
+        $check->execute([$fork['fork_id']]);
+        if ($check->fetchColumn() == 0) {
+            $delete = $pdo->prepare("DELETE FROM paste_forks WHERE id = ?");
+            $delete->execute([$fork['id']]);
+        }
+    }
+
+    // Clean up orphaned chains
+    $stmt = $pdo->query("SELECT id, chain_id FROM paste_chains");
+    $chains = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    foreach ($chains as $chain) {
+        $check = $pdo->prepare("SELECT COUNT(*) FROM pastes WHERE id = ?");
+        $check->execute([$chain['chain_id']]);
+        if ($check->fetchColumn() == 0) {
+            $delete = $pdo->prepare("DELETE FROM paste_chains WHERE id = ?");
+            $delete->execute([$chain['id']]);
+        }
+    }
+
+    echo "Cleanup complete.\n";
+} catch (PDOException $e) {
+    echo "Database error: " . $e->getMessage();
+}
