@@ -74,7 +74,7 @@ include __DIR__ . '/../includes/header.php';
             </div>
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-transparent border-0 p-0">
-                    <ul class="nav nav-tabs border-0" id="profileTabs" role="tablist">
+                    <ul class="nav nav-tabs border-0 nav-fill flex-nowrap gap-2" id="profileTabs" role="tablist">
                         <li class="nav-item" role="presentation">
                             <button class="nav-link active border-0 fw-semibold" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
                                 <i class="fas fa-chart-bar me-2"></i>Overview
