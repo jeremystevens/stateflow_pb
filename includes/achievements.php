@@ -78,7 +78,12 @@ function getUserAchievementStats($userId)
 {
     global $pdo;
     $totalUnlocked = (int)$pdo->query("SELECT COUNT(*) FROM user_achievements WHERE user_id = '" . $userId . "'")->fetchColumn();
-    $totalPoints = (int)$pdo->query("SELECT COALESCE(SUM(points),0) FROM user_achievements WHERE user_id = '" . $userId . "'")->fetchColumn();
+    $totalPoints = (int)$pdo->query(
+        "SELECT COALESCE(SUM(a.points), 0)
+         FROM user_achievements ua
+         JOIN achievements a ON ua.achievement_id = a.id
+         WHERE ua.user_id = '" . $userId . "'"
+    )->fetchColumn();
     $totalAchievements = (int)$pdo->query('SELECT COUNT(*) FROM achievements')->fetchColumn();
     $completionRate = $totalAchievements > 0 ? round(($totalUnlocked / $totalAchievements) * 100) : 0;
     return [

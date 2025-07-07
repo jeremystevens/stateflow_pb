@@ -13,11 +13,20 @@ CREATE TABLE achievements (
     icon TEXT NOT NULL,
     category TEXT DEFAULT 'general',
     points INTEGER DEFAULT 10,
+    target_progress INTEGER DEFAULT 1,
     is_active BOOLEAN DEFAULT 1,
     created_at INTEGER DEFAULT (strftime('%s', 'now'))
 );
 SQL
         );
+    } else {
+        $cols = $pdo->query("PRAGMA table_info(achievements)")->fetchAll(PDO::FETCH_COLUMN, 1);
+        if (!in_array('target_progress', $cols)) {
+            $pdo->exec("ALTER TABLE achievements ADD COLUMN target_progress INTEGER DEFAULT 1");
+        }
+        if (!in_array('points', $cols)) {
+            $pdo->exec("ALTER TABLE achievements ADD COLUMN points INTEGER DEFAULT 10");
+        }
     }
 
     if (!in_array('user_achievement_progress', $tables)) {
