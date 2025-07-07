@@ -326,39 +326,4 @@ CREATE INDEX IF NOT EXISTS "idx_pastes_language" ON "pastes" ("language");
 CREATE INDEX IF NOT EXISTS "idx_paste_views_paste_id" ON "paste_views" ("paste_id");
 CREATE INDEX IF NOT EXISTS "idx_paste_views_ip_address" ON "paste_views" ("ip_address");
 
--- Achievements system tables
-CREATE TABLE IF NOT EXISTS "achievements" (
-    "id" INTEGER PRIMARY KEY AUTOINCREMENT,
-    "name" TEXT NOT NULL UNIQUE,
-    "title" TEXT NOT NULL,
-    "description" TEXT NOT NULL,
-    "icon" TEXT NOT NULL,
-    "category" TEXT DEFAULT 'general',
-    "points" INTEGER DEFAULT 10,
-    "target_progress" INTEGER DEFAULT 1,
-    "is_active" BOOLEAN DEFAULT 1,
-    "created_at" INTEGER DEFAULT (strftime('%s', 'now'))
-);
-
-CREATE TABLE IF NOT EXISTS "user_achievement_progress" (
-    "id" INTEGER PRIMARY KEY AUTOINCREMENT,
-    "user_id" TEXT NOT NULL,
-    "achievement_id" INTEGER NOT NULL,
-    "current_progress" INTEGER DEFAULT 0,
-    "target_progress" INTEGER NOT NULL,
-    "updated_at" INTEGER DEFAULT (strftime('%s','now')),
-    FOREIGN KEY("achievement_id") REFERENCES "achievements"("id"),
-    FOREIGN KEY("user_id") REFERENCES "users"("id")
-);
-
-CREATE TABLE IF NOT EXISTS "user_achievements" (
-    "id" INTEGER PRIMARY KEY AUTOINCREMENT,
-    "user_id" TEXT NOT NULL,
-    "achievement_id" INTEGER NOT NULL,
-    "unlocked_at" INTEGER DEFAULT (strftime('%s','now')),
-    "points" INTEGER DEFAULT 0,
-    FOREIGN KEY("achievement_id") REFERENCES "achievements"("id"),
-    FOREIGN KEY("user_id") REFERENCES "users"("id")
-);
-
 COMMIT;

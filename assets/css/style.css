@@ -1996,9 +1996,6 @@ button[disabled] {
     padding: 1rem;
     text-align: center;
 }
-[data-bs-theme="dark"] .progress {
-    background-color: #2d3748;
-}
 [data-bs-theme="dark"] .profile-stat {
     background: linear-gradient(to bottom right, rgba(99,102,241,0.2), rgba(59,130,246,0.1));
 }
