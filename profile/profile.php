@@ -55,7 +55,8 @@ function timeAgo($timestamp) {
 $statsStmt = $pdo->prepare(
     "SELECT COUNT(*) AS total_pastes, \n" .
     "COALESCE(SUM(views),0) AS total_views, \n" .
-    "COALESCE(SUM(fork_count),0) AS total_forks \n" .
+    "COALESCE(SUM(fork_count),0) AS total_forks, \n" .
+    "SUM(CASE WHEN parent_paste_id IS NOT NULL THEN 1 ELSE 0 END) AS total_chains \n" .
     "FROM pastes WHERE user_id = ?"
 );
 $statsStmt->execute([$user['id']]);
@@ -63,6 +64,7 @@ $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
 $totalPastes = $stats['total_pastes'] ?? 0;
 $totalViews  = $stats['total_views']  ?? 0;
 $totalForks  = $stats['total_forks']  ?? 0;
+$totalChains = $stats['total_chains'] ?? 0;
 $followers   = $user['followers_count'] ?? 0;
 $following   = $user['following_count'] ?? 0;
 
@@ -129,6 +131,11 @@ include __DIR__ . '/../includes/header.php';
                         <small class="text-muted">Forks</small>
                     </div>
                     <div class="profile-stat">
+                        <i class="fas fa-link mb-1"></i>
+                        <div class="h5 mb-0"><?= $totalChains ?></div>
+                        <small class="text-muted">Chains</small>
+                    </div>
+                    <div class="profile-stat">
                         <i class="fas fa-users mb-1"></i>
                         <div class="h5 mb-0"><?= $followers ?></div>
                         <small class="text-muted">Followers</small>
@@ -139,26 +146,15 @@ include __DIR__ . '/../includes/header.php';
                         <small class="text-muted">Following</small>
                     </div>
                 </div>
-                <h5 class="fw-bold mb-3">Profile Summary</h5>
                 <div class="row g-4">
                     <div class="col-md-6">
-                        <div class="profile-summary h-100">
-                            <p class="mb-0">
-                                <?= !empty($user['tagline']) ? htmlspecialchars($user['tagline']) : 'No tagline provided.' ?>
-                            </p>
+                        <div class="profile-chart">
+                            <canvas id="chart1"></canvas>
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="profile-summary h-100">
-                            <p class="mb-0">
-                                <?php if (!empty($user['website'])): ?>
-                                    <a href="<?= htmlspecialchars($user['website']); ?>" target="_blank">
-                                        <?= htmlspecialchars($user['website']); ?>
-                                    </a>
-                                <?php else: ?>
-                                    No website provided.
-                                <?php endif; ?>
-                            </p>
+                        <div class="profile-chart">
+                            <canvas id="chart2"></canvas>
                         </div>
                     </div>
                 </div>
@@ -175,5 +171,37 @@ include __DIR__ . '/../includes/header.php';
         </div>
     </div>
 </main>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const ctx1 = document.getElementById('chart1').getContext('2d');
+    new Chart(ctx1, {
+        type: 'bar',
+        data: {
+            labels: ['A', 'B', 'C'],
+            datasets: [{
+                label: 'Sample 1',
+                data: [12, 19, 3],
+                backgroundColor: 'rgba(59,130,246,0.6)'
+            }]
+        },
+        options: { plugins: { title: { display: true, text: 'Chart One' } } }
+    });
+
+    const ctx2 = document.getElementById('chart2').getContext('2d');
+    new Chart(ctx2, {
+        type: 'bar',
+        data: {
+            labels: ['X', 'Y', 'Z'],
+            datasets: [{
+                label: 'Sample 2',
+                data: [5, 10, 15],
+                backgroundColor: 'rgba(34,197,94,0.6)'
+            }]
+        },
+        options: { plugins: { title: { display: true, text: 'Chart Two' } } }
+    });
+});
+</script>
 <?php include __DIR__ . '/../includes/footer.php'; ?>
 
