@@ -216,8 +216,14 @@ include __DIR__ . '/../includes/header.php';
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    const getTextColor = () => {
+        const isDarkMode = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+        return isDarkMode ? '#f0f0f0' : '#333';
+    };
+    let textColor = getTextColor();
+
     const ctx1 = document.getElementById('chart1').getContext('2d');
-    new Chart(ctx1, {
+    const chart1 = new Chart(ctx1, {
         type: 'bar',
         data: {
             labels: <?= json_encode($chart1Labels) ?>,
@@ -230,12 +236,19 @@ document.addEventListener('DOMContentLoaded', function () {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { title: { display: true, text: 'Pastes Created Per Day' } }
+            plugins: {
+                title: { display: true, text: 'Pastes Created Per Day', color: textColor },
+                legend: { labels: { color: textColor } }
+            },
+            scales: {
+                x: { ticks: { color: textColor } },
+                y: { ticks: { color: textColor } }
+            }
         }
     });
 
     const ctx2 = document.getElementById('chart2').getContext('2d');
-    new Chart(ctx2, {
+    const chart2 = new Chart(ctx2, {
         type: 'bar',
         data: {
             labels: <?= json_encode($chart2Labels) ?>,
@@ -248,8 +261,26 @@ document.addEventListener('DOMContentLoaded', function () {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { title: { display: true, text: 'Engagement Metrics' } }
+            plugins: {
+                title: { display: true, text: 'Engagement Metrics', color: textColor },
+                legend: { labels: { color: textColor } }
+            },
+            scales: {
+                x: { ticks: { color: textColor } },
+                y: { ticks: { color: textColor } }
+            }
         }
+    });
+
+    document.addEventListener('themeChanged', () => {
+        textColor = getTextColor();
+        [chart1, chart2].forEach(chart => {
+            chart.options.plugins.title.color = textColor;
+            chart.options.plugins.legend.labels.color = textColor;
+            chart.options.scales.x.ticks.color = textColor;
+            chart.options.scales.y.ticks.color = textColor;
+            chart.update();
+        });
     });
 });
 </script>
