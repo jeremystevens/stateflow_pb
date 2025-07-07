@@ -2,10 +2,23 @@
 session_start();
 require_once '../includes/db.php';
 require_once '../database/init.php';
-
 $success = false;
 $error = '';
 $pasteId = '';
+$prefill = '';
+$parent_id = $_GET['parent'] ?? null;
+if ($parent_id) {
+   $stmt = $pdo->prepare("SELECT content FROM pastes WHERE id = ?");
+    $stmt->execute([$parent_id]);
+    $prefill = $stmt->fetchColumn();
+}
+
+$forkOriginalId = $_GET['fork'] ?? null;
+if ($forkOriginalId) {
+    $stmt = $pdo->prepare("SELECT content FROM pastes WHERE id = ?");
+    $stmt->execute([$forkOriginalId]);
+    $prefill = $stmt->fetchColumn();
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title = trim($_POST['title'] ?? '');
@@ -16,6 +29,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = trim($_POST['password'] ?? '');
     $burnAfterRead = isset($_POST['burn_after_read']);
     $zeroKnowledge = isset($_POST['zero_knowledge']);
+    $pasteAsGuest = isset($_POST['paste_as_guest']);
+    $parentPasteId = $_POST['parent_paste_id'] ?? null;
     
     if (empty($content)) {
         $error = 'Content cannot be empty.';
@@ -52,8 +67,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Hash password if provided
         $hashedPassword = $password ? password_hash($password, PASSWORD_DEFAULT) : null;
-        
-        $result = createPasteAdvanced($title, $content, $language, $expirationDate, $visibility, $hashedPassword, $burnAfterRead, $zeroKnowledge);
+
+        $userId = null;
+        if (isset($_SESSION['user_id']) && !$pasteAsGuest) {
+            $userId = $_SESSION['user_id'];
+        }
+
+        $result = createPasteAdvanced($title, $content, $language, $expirationDate, $visibility, $hashedPassword, $burnAfterRead, $zeroKnowledge, $parentPasteId, $userId);
         
         if ($result) {
             // Handle different return formats for compatibility
@@ -64,6 +84,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Backward compatibility for non-burn pastes
                 $pasteId = $result;
                 $creatorToken = null;
+            }
+
+            // $forkedFromId = $_POST['fork_original_id'] ?? null;
+            // // Handle forking logic. Include forked_by_user_id only if user is logged in
+            // if (!empty($forkedFromId)) {
+            //     if (isset($_SESSION['user_id'])) {
+            //         $userId = $_SESSION['user_id'];
+            //         $forkInsert = $pdo->prepare("INSERT INTO paste_forks (original_paste_id, forked_paste_id, forked_by_user_id) VALUES (?, ?, ?)");
+            //         $forkInsert->execute([$forkedFromId, $pasteId, $userId]);
+            //     } else {
+            //         // Allow anonymous forking, skip the user ID
+            //         $forkInsert = $pdo->prepare("INSERT INTO paste_forks (original_paste_id, forked_paste_id) VALUES (?, ?)");
+            //         $forkInsert->execute([$forkedFromId, $pasteId]);
+            //     }
+            // }
+             // Fork handling: record the relationship if this paste was created from another
+            if ($forkOriginalId) {
+                if (isset($_SESSION['user_id'])) {
+                    $userId = $_SESSION['user_id'];
+                    $stmt = $pdo->prepare("INSERT INTO paste_forks (original_paste_id, forked_paste_id, forked_by_user_id) VALUES (?, ?, ?)");
+                    $stmt->execute([$forkOriginalId, $pasteId, $userId]);
+                } else {
+                    $stmt = $pdo->prepare("INSERT INTO paste_forks (original_paste_id, forked_paste_id) VALUES (?, ?)");
+                    $stmt->execute([$forkOriginalId, $pasteId]);
+                }
             }
             
             // For burn after read pastes, add secure creator token
@@ -119,7 +164,7 @@ include '../includes/header.php';
     <div class="row justify-content-center">
         <div class="col-lg-10">
             <div class="card border-0 shadow-lg">
-                <div class="card-header border-0 bg-primary text-white py-3">
+                <div class="card-header border-0 text-white py-3" style="background-color: #334155;">
                     <div class="d-flex justify-content-between align-items-center">
                         <h4 class="mb-0">
                             <i class="fas fa-plus me-2"></i>Create Paste
@@ -208,12 +253,16 @@ include '../includes/header.php';
                                         <i class="fas fa-exclamation-triangle me-1"></i>
                                         <small><strong>Zero Knowledge Mode:</strong> Your content will be encrypted before sending to the server. Make sure to save the generated URL as it cannot be recovered if lost.</small>
                                     </div>
-                                    <textarea class="form-control font-monospace" id="content" name="content" 
-                                              rows="20" placeholder="Paste your code or text here..." 
-                                              required><?php echo htmlspecialchars($_POST['content'] ?? ''); ?></textarea>
+                                    <textarea class="form-control font-monospace" id="content" name="content"
+                                              rows="20" placeholder="Paste your code or text here..."
+                                              required><?php echo htmlspecialchars($_POST['content'] ?? $prefill); ?></textarea>
                                     <div class="invalid-feedback">
                                         Please provide some content for your paste.
                                     </div>
+                                    <?php if ($parent_id): ?>
+                                    <input type="hidden" name="parent_paste_id" value="<?= htmlspecialchars($parent_id) ?>">
+                                    <?php endif; ?>
+                                    <input type="hidden" name="fork_original_id" value="<?= htmlspecialchars($forkOriginalId ?? '') ?>">
                                 </div>
                             </div>
 
@@ -294,6 +343,13 @@ include '../includes/header.php';
                                         <label class="form-check-label" for="burnAfterRead">
                                             <i class="fas fa-fire me-1 text-danger"></i>Burn After Read
                                             <small class="d-block text-muted">Delete after first view</small>
+                                        </label>
+                                    </div>
+                                    <div class="form-check mt-2">
+                                        <input class="form-check-input" type="checkbox" id="pasteAsGuest" name="paste_as_guest">
+                                        <label class="form-check-label" for="pasteAsGuest">
+                                            <i class="fas fa-user-secret me-1"></i>Paste as a guest
+                                            <small class="d-block text-muted">Post anonymously even while logged in.</small>
                                         </label>
                                     </div>
                                 </div>

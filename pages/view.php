@@ -9,6 +9,10 @@ $action = $_POST['action'] ?? '';
 $paste = null;
 $error = '';
 $success = '';
+$versions = [];
+$forkCount = 0;
+$chainCount = 0;
+$hasFlagged = false;
 
 if (!empty($pasteId)) {
     $paste = getPasteById($pasteId);
@@ -20,6 +24,16 @@ if (!empty($pasteId)) {
         }
     }
 }
+
+$parent = null;
+if ($paste && !empty($paste['parent_paste_id'])) {
+    //$parentStmt = $db->prepare("SELECT id, title FROM pastes WHERE id = ?");
+    $parentStmt =$pdo->prepare("SELECT * FROM pastes WHERE id = ?");
+    $parentStmt->execute([$paste['parent_paste_id']]);
+    $parent = $parentStmt->fetch(PDO::FETCH_ASSOC);
+}
+
+$origin = null;
 
 // Initialize thread data if viewing a specific thread
 $thread = null;
@@ -154,18 +168,44 @@ if (empty($pasteId)) {
             try {
                 // Get database connection for additional queries
                 $db = getDatabase();
+
+                // Check if current IP already flagged this paste
+                $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+                $flagCheck = $db->prepare("SELECT 1 FROM paste_flags WHERE paste_id = ? AND ip_address = ? LIMIT 1");
+                $flagCheck->execute([$pasteId, $ip]);
+                $hasFlagged = $flagCheck->fetchColumn() !== false;
                 
                 // Get versions count
                 $stmt = $db->prepare("SELECT COUNT(*) as version_count FROM paste_versions WHERE paste_id = ?");
                 $stmt->execute([$pasteId]);
                 $versionData = $stmt->fetch();
                 $paste['version_count'] = $versionData['version_count'] ?? 0;
+
+                // Fetch all versions if more than one exists
+                $versionStmt = $db->prepare("SELECT * FROM paste_versions WHERE paste_id = ? ORDER BY version_number DESC");
+                $versionStmt->execute([$pasteId]);
+                $versions = $versionStmt->fetchAll(PDO::FETCH_ASSOC);
                 
-                // Get forks count  
-                $stmt = $db->prepare("SELECT COUNT(*) as fork_count FROM paste_forks WHERE original_paste_id = ?");
-                $stmt->execute([$pasteId]);
-                $forkData = $stmt->fetch();
-                $paste['fork_count'] = $forkData['fork_count'] ?? 0;
+                // Get forks count
+                $forks_q = $db->prepare("SELECT COUNT(*) FROM paste_forks WHERE original_paste_id = ?");
+                $forks_q->execute([$pasteId]);
+                $fork_count = $forks_q->fetchColumn();
+                $paste['fork_count'] = $fork_count ?: 0;
+                $forkCount = $paste['fork_count'];
+
+                // Determine if this paste is a fork of another
+                $origin_q = $db->prepare(
+                    "SELECT p.id, p.title FROM pastes p JOIN paste_forks f ON f.original_paste_id = p.id WHERE f.forked_paste_id = ?"
+                );
+                $origin_q->execute([$pasteId]);
+                $origin = $origin_q->fetch(PDO::FETCH_ASSOC);
+
+                // Get chain continuations count
+                $chainStmt = $db->prepare("SELECT COUNT(*) as chain_count FROM pastes WHERE parent_paste_id = ?");
+                $chainStmt->execute([$pasteId]);
+                $chainData = $chainStmt->fetch();
+                $paste['chain_count'] = $chainData['chain_count'] ?? 0;
+                $chainCount = $paste['chain_count'];
                 
                 // Get comments count
                 $stmt = $db->prepare("SELECT COUNT(*) as comment_count FROM comments WHERE paste_id = ? AND is_deleted = 0");
@@ -186,8 +226,12 @@ if (empty($pasteId)) {
                 // Set defaults if queries fail
                 $paste['version_count'] = 1;
                 $paste['fork_count'] = 0;
+                $forkCount = 0;
+                $paste['chain_count'] = 0;
+                $chainCount = 0;
                 $paste['comment_count'] = 0;
                 $comments = [];
+                $versions = [];
                 $paste['line_count'] = substr_count($paste['content'], "\n") + 1;
                 $paste['character_count'] = strlen($paste['content']);
                 $paste['file_size'] = formatBytes(strlen($paste['content']));
@@ -236,7 +280,29 @@ include '../includes/header.php';
         </div>
     </div>
     <?php else: ?>
-    
+
+    <?php if ($parent): ?>
+    <div class="row justify-content-center mb-4">
+        <div class="col-lg-10">
+            <div class="alert alert-secondary chain-parent-link" role="alert">
+                <strong>This is part of a chain.</strong><br>
+                Continues from: <a href="/pages/view.php?id=<?= $parent['id'] ?>"><?= htmlspecialchars($parent['title']) ?></a>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($origin): ?>
+    <div class="row justify-content-center mb-4">
+        <div class="col-lg-10">
+            <div class="alert alert-info fork-origin" role="alert">
+                <i class="fas fa-code-branch me-1"></i>
+                Forked from <a href="/pages/view.php?id=<?= $origin['id'] ?>"><?= htmlspecialchars($origin['title']) ?></a>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <!-- First View Notice for Burn After Read -->
     <?php if ($paste['burn_after_read'] == 1 && isset($isCreatorView) && $isCreatorView): ?>
     <div class="row justify-content-center mb-4">
@@ -538,6 +604,11 @@ include '../includes/header.php';
                         <div class="flex-grow-1">
                             <h2 class="mb-0 fw-bold">
                                 <?php echo htmlspecialchars($paste['title'] ?: 'Untitled Paste'); ?>
+                                <?php if ($origin): ?>
+                                <a href="/pages/view.php?id=<?= $origin['id'] ?>" class="ms-2 text-decoration-none" title="Forked from <?= htmlspecialchars($origin['title']) ?>">
+                                    <i class="fas fa-code-branch"></i>
+                                </a>
+                                <?php endif; ?>
                             </h2>
                         </div>
                         <!-- Desktop Action Buttons -->
@@ -548,9 +619,15 @@ include '../includes/header.php';
                             <button class="btn btn-outline-primary btn-sm" onclick="downloadPaste()" title="Download">
                                 <i class="fas fa-download me-1"></i>Download
                             </button>
-                            <button class="btn btn-outline-danger btn-sm" onclick="reportPaste()" title="Report">
+                            <?php if ($hasFlagged): ?>
+                            <button class="btn btn-outline-danger btn-sm" disabled>
+                                <i class="fas fa-flag me-1"></i>You already reported this paste
+                            </button>
+                            <?php else: ?>
+                            <button class="btn btn-outline-danger btn-sm" onclick="reportPaste('<?php echo $pasteId; ?>')" title="Report">
                                 <i class="fas fa-flag me-1"></i>Report
                             </button>
+                            <?php endif; ?>
                             <div class="dropdown">
                                 <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" title="More Options">
                                     <i class="fas fa-ellipsis-h"></i>
@@ -563,7 +640,7 @@ include '../includes/header.php';
                                     <li><a class="dropdown-item" href="create.php?clone=<?php echo $pasteId; ?>">
                                         <i class="fas fa-clone me-2"></i>Clone Paste
                                     </a></li>
-                                    <li><a class="dropdown-item" href="#" onclick="forkPaste()">
+                                    <li><a class="dropdown-item" href="create.php?fork=<?php echo $pasteId; ?>">
                                         <i class="fas fa-code-branch me-2"></i>Fork Paste
                                     </a></li>
                                     <li><a class="dropdown-item" href="#" onclick="addToFavorites()">
@@ -589,14 +666,20 @@ include '../includes/header.php';
                                         <i class="fas fa-share me-2"></i>Share Paste
                                     </a></li>
                                     <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item text-danger" href="#" onclick="reportPaste()">
+                                    <?php if ($hasFlagged): ?>
+                                    <li><span class="dropdown-item text-muted disabled">
+                                        <i class="fas fa-flag me-2"></i>You already reported this paste
+                                    </span></li>
+                                    <?php else: ?>
+                                    <li><a class="dropdown-item text-danger" href="#" onclick="reportPaste('<?php echo $pasteId; ?>')">
                                         <i class="fas fa-flag me-2"></i>Report Paste
                                     </a></li>
+                                    <?php endif; ?>
                                     <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item" href="create.php?clone=<?php echo $pasteId; ?>">
                                         <i class="fas fa-clone me-2"></i>Clone Paste
                                     </a></li>
-                                    <li><a class="dropdown-item" href="#" onclick="forkPaste()">
+                                    <li><a class="dropdown-item" href="create.php?fork=<?php echo $pasteId; ?>">
                                         <i class="fas fa-code-branch me-2"></i>Fork Paste
                                     </a></li>
                                     <li><a class="dropdown-item" href="#" onclick="addToFavorites()">
@@ -608,7 +691,17 @@ include '../includes/header.php';
                     </div>
                     
                     <!-- Metadata Row -->
-                    <div class="d-flex flex-wrap gap-3 text-muted small">
+                    <div class="d-flex flex-wrap gap-3 text-muted small align-items-center">
+                        <span class="d-flex align-items-center">
+                            <?php
+                                $avatarPath = '/img/default-avatar.svg';
+                                if (!empty($paste['profile_image'])) {
+                                    $avatarPath = '/uploads/avatars/' . $paste['profile_image'];
+                                }
+                            ?>
+                            <img src="<?php echo htmlspecialchars($avatarPath); ?>" alt="Avatar" class="rounded-circle me-1" width="24" height="24">
+                            <?php echo htmlspecialchars($paste['username'] ?? 'Anonymous'); ?>
+                        </span>
                         <span class="badge bg-primary-subtle text-primary px-3 py-2">
                             <i class="fas fa-code me-1"></i>
                             <?php echo htmlspecialchars($paste['language']); ?>
@@ -665,7 +758,7 @@ include '../includes/header.php';
                         <?php if ($paste['version_count'] > 1): ?>
                         <li class="nav-item" role="presentation">
                             <button class="nav-link border-0 fw-semibold" id="versions-tab" data-bs-toggle="tab" data-bs-target="#versions" type="button" role="tab">
-                                <i class="fas fa-history me-2"></i>Versions <span class="badge bg-secondary ms-1"><?php echo $paste['version_count']; ?></span>
+                                <i class="fas fa-history me-2"></i>Versioning <span class="badge bg-secondary ms-1"><?php echo $paste['version_count']; ?></span>
                             </button>
                         </li>
                         <?php endif; ?>
@@ -674,6 +767,13 @@ include '../includes/header.php';
                                 <i class="fas fa-link me-2"></i>Related
                             </button>
                         </li>
+                        <?php if ($chainCount > 0): ?>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link border-0 fw-semibold" id="chain-tab" data-bs-toggle="tab" data-bs-target="#chain" type="button" role="tab">
+                                <i class="fas fa-stream me-2"></i>Chain <span class="badge bg-secondary ms-1"><?php echo $chainCount; ?></span>
+                            </button>
+                        </li>
+                        <?php endif; ?>
                         <?php if ($paste['fork_count'] > 0): ?>
                         <li class="nav-item" role="presentation">
                             <button class="nav-link border-0 fw-semibold" id="forks-tab" data-bs-toggle="tab" data-bs-target="#forks" type="button" role="tab">
@@ -813,11 +913,21 @@ include '../includes/header.php';
                         <?php if ($paste['version_count'] > 1): ?>
                         <div class="tab-pane fade" id="versions" role="tabpanel">
                             <div class="p-4">
-                                <h6 class="fw-semibold mb-3">Version History</h6>
-                                <div class="alert alert-info">
-                                    <i class="fas fa-info-circle me-2"></i>
-                                    Version history feature coming soon! This will show all changes made to this paste over time.
+                                <h6 class="fw-semibold mb-3">Versioning</h6>
+                                <div class="mb-3">
+                                    <label for="versionA" class="form-label">Compare:</label>
+                                    <select id="versionA" class="form-select">
+                                        <?php foreach ($versions as $v) echo "<option value='{$v['version_number']}'>v{$v['version_number']}</option>"; ?>
+                                    </select>
                                 </div>
+                                <div class="mb-3">
+                                    <label for="versionB" class="form-label">With:</label>
+                                    <select id="versionB" class="form-select">
+                                        <?php foreach ($versions as $v) echo "<option value='{$v['version_number']}'>v{$v['version_number']}</option>"; ?>
+                                    </select>
+                                </div>
+                                <button class="btn btn-primary w-100" onclick="compareVersions()">Compare</button>
+                                <pre id="diffOutput" class="mt-3"></pre>
                             </div>
                         </div>
                         <?php endif; ?>
@@ -833,15 +943,76 @@ include '../includes/header.php';
                             </div>
                         </div>
 
+                        <!-- Chain Tab -->
+                        <?php if ($chainCount > 0): ?>
+                        <div class="tab-pane fade" id="chain" role="tabpanel">
+                            <div class="p-4">
+                                <h6 class="fw-semibold mb-3">Chain Continuations</h6>
+                                <?php
+                                    $chainList = $db->prepare(
+                                        "SELECT p.*, u.username, u.profile_image FROM pastes p LEFT JOIN users u ON p.user_id = u.id WHERE p.parent_paste_id = ? ORDER BY p.created_at DESC LIMIT 10"
+                                    );
+                                    $chainList->execute([$pasteId]);
+                                    foreach ($chainList as $chain) {
+                                ?>
+                                    <div class="chain-item mb-3">
+                                        <?php
+                                            $chainAvatar = '/img/default-avatar.svg';
+                                            if (!empty($chain['profile_image'])) {
+                                                $chainAvatar = '/uploads/avatars/' . $chain['profile_image'];
+                                            }
+                                        ?>
+                                        <img src="<?= htmlspecialchars($chainAvatar); ?>" width="30" class="me-2 rounded-circle">
+                                        <strong><?= htmlspecialchars($chain['title']) ?></strong> by <?= htmlspecialchars($chain['username'] ?? 'Anonymous') ?>
+                                        <div class="small text-muted">
+                                            <?= date('M j, Y H:i', $chain['created_at']) ?> — <?= $chain['views'] ?> views
+                                        </div>
+                                        <div>
+                                            <a href="/pages/view.php?id=<?= $chain['id'] ?>" class="me-2">View</a>
+                                            <a href="/pages/create.php?parent=<?= $pasteId ?>">Continue Chain</a>
+                                        </div>
+                                    </div>
+                                <?php } ?>
+                                <?php if ($chainCount > 10): ?>
+                                    <div class="text-muted">+<?= $chainCount - 10 ?> more in chain...</div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+
                         <!-- Forks Tab -->
                         <?php if ($paste['fork_count'] > 0): ?>
                         <div class="tab-pane fade" id="forks" role="tabpanel">
                             <div class="p-4">
-                                <h6 class="fw-semibold mb-3">Forks & Derivatives</h6>
-                                <div class="alert alert-info">
-                                    <i class="fas fa-code-branch me-2"></i>
-                                    Fork management and derivative tracking coming soon!
-                                </div>
+                                <h6 class="fw-semibold mb-3">Forks</h6>
+                                <?php
+                                    $forkList = $db->prepare(
+                                        "SELECT p.*, u.username, u.profile_image FROM paste_forks f JOIN pastes p ON f.forked_paste_id = p.id LEFT JOIN users u ON f.forked_by_user_id = u.id WHERE f.original_paste_id = ? ORDER BY p.created_at DESC LIMIT 10"
+                                    );
+                                    $forkList->execute([$pasteId]);
+                                    foreach ($forkList as $fork) {
+                                ?>
+                                    <div class="fork-item mb-3">
+                                        <?php
+                                            $forkAvatar = '/img/default-avatar.svg';
+                                            if (!empty($fork['profile_image'])) {
+                                                $forkAvatar = '/uploads/avatars/' . $fork['profile_image'];
+                                            }
+                                        ?>
+                                        <img src="<?= htmlspecialchars($forkAvatar); ?>" width="30" class="me-2 rounded-circle">
+                                        <strong><?= htmlspecialchars($fork['title']) ?></strong> by <?= htmlspecialchars($fork['username'] ?? 'Anonymous') ?>
+                                        <div class="small text-muted">
+                                            <?= date('M j, Y H:i', $fork['created_at']) ?> — <?= $fork['views'] ?> views
+                                        </div>
+                                        <div>
+                                            <a href="/pages/view.php?id=<?= $fork['id'] ?>" class="me-2">View</a>
+                                            <a href="/pages/create.php?fork=<?= $fork['id'] ?>">Fork</a>
+                                        </div>
+                                    </div>
+                                <?php } ?>
+                                <?php if ($paste['fork_count'] > 10): ?>
+                                    <div class="text-muted">+<?= $paste['fork_count'] - 10 ?> more forks...</div>
+                                <?php endif; ?>
                             </div>
                         </div>
                         <?php endif; ?>
@@ -1236,14 +1407,50 @@ include '../includes/header.php';
 
     // Fork paste
     function forkPaste() {
-        showNotification('Fork functionality coming soon!', 'info');
+        window.location.href = 'create.php?fork=<?php echo $pasteId; ?>';
+    }
+
+    // Display flag modal
+    function showFlagModal(html) {
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = html;
+        document.body.appendChild(wrapper);
+        const modalEl = wrapper.querySelector('.modal');
+        const modal = new bootstrap.Modal(modalEl);
+        modalEl.addEventListener('hidden.bs.modal', () => wrapper.remove());
+        const form = modalEl.querySelector('#flagForm');
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(form);
+            fetch('flag_paste.php', { method: 'POST', body: formData })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        modal.hide();
+                        showNotification(data.message, 'success');
+                    } else {
+                        const err = modalEl.querySelector('.error-message');
+                        if (err) err.textContent = data.message || 'Failed to report';
+                    }
+                })
+                .catch(() => {
+                    const err = modalEl.querySelector('.error-message');
+                    if (err) err.textContent = 'Failed to submit report';
+                });
+        });
+        modal.show();
     }
 
     // Report paste
-    function reportPaste() {
-        if (confirm('Are you sure you want to report this paste for inappropriate content?')) {
-            showNotification('Report submitted. Thank you for helping keep our community safe.', 'success');
-        }
+    function reportPaste(pasteId) {
+        fetch(`flag_paste.php?paste_id=${pasteId}`)
+            .then(response => response.text())
+            .then(html => {
+                showFlagModal(html);
+            })
+            .catch(error => {
+                console.error('Error loading flag form:', error);
+            });
     }
 
     // Share paste
@@ -1335,6 +1542,14 @@ include '../includes/header.php';
                 notification.remove();
             }
         }, 3000);
+    }
+
+    function openTab(evt, tabId) {
+        document.querySelectorAll('.tabcontent').forEach(el => el.style.display = 'none');
+        const tab = document.getElementById(tabId);
+        if (tab) {
+            tab.style.display = 'block';
+        }
     }
 
     // Toggle reply form visibility
@@ -1840,15 +2055,26 @@ include '../includes/header.php';
             ${message}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         `;
-        
+
         document.body.appendChild(notification);
-        
+
         // Auto-remove after 4 seconds
         setTimeout(() => {
             if (notification.parentNode) {
                 notification.remove();
             }
         }, 4000);
+    }
+
+    function compareVersions() {
+        const a = document.getElementById('versionA').value;
+        const b = document.getElementById('versionB').value;
+
+        fetch(`/api/compare_versions.php?paste_id=<?php echo $pasteId; ?>&a=${a}&b=${b}`)
+            .then(res => res.text())
+            .then(html => {
+                document.getElementById('diffOutput').innerHTML = html;
+            });
     }
     </script>
 

@@ -1,3 +1,26 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+if (!isset($pdo)) {
+    require_once __DIR__ . '/db.php';
+}
+$userData = null;
+if (isset($_SESSION['user_id'])) {
+    $stmt = $pdo->prepare("SELECT username, profile_image FROM users WHERE id = ?");
+    $stmt->execute([$_SESSION['user_id']]);
+    $userData = $stmt->fetch();
+    if ($userData) {
+        if (!isset($_SESSION['avatar']) && $userData['profile_image']) {
+            $_SESSION['avatar'] = $userData['profile_image'];
+        }
+        $avatarFile = $_SESSION['avatar'] ?? $userData['profile_image'];
+        $userData['avatar'] = $avatarFile
+            ? '/uploads/avatars/' . $avatarFile
+            : '/img/default-avatar.svg';
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="light">
 <head>
@@ -41,10 +64,10 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="/index.php">
+                       <!-- <a class="nav-link" href="/index.php">
                             <i class="fas fa-home me-1"></i>Home
                         </a>
-                    </li>
+                    </li> -->
                     <li class="nav-item">
                         <a class="nav-link" href="/pages/create.php">
                             <i class="fas fa-plus me-1"></i>Create Paste
@@ -55,13 +78,69 @@
                             <i class="fas fa-clock me-1"></i>Recent Pastes
                         </a>
                     </li>
+<?php if ($userData): ?>
+                    <li class="nav-item d-lg-none dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="mobileUserDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img src="/uploads/avatars/<?php echo htmlspecialchars($_SESSION['avatar'] ?? 'default-avatar.svg'); ?>" width="24" height="24" class="rounded-circle me-2">
+                            <?php echo htmlspecialchars($userData['username']); ?>
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="mobileUserDropdown">
+                            <li>
+                                <a class="dropdown-item" href="/profile/edit_profile.php">
+                                    <i class="fas fa-user-edit me-2"></i>Edit Profile
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="/profile/profile.php">
+                                    <i class="fa fa-user"></i> View Profile
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+<?php else: ?>
+                    <li class="nav-item d-lg-none">
+                        <a class="nav-link" href="/login.php">
+                            <i class="fas fa-sign-in-alt me-1"></i>Login
+                        </a>
+                    </li>
+                    <li class="nav-item d-lg-none">
+                        <a class="nav-link" href="/register.php">
+                            <i class="fas fa-user-plus me-1"></i>Sign Up
+                        </a>
+                    </li>
+<?php endif; ?>
                 </ul>
 
-                <!-- Dark Mode Toggle -->
-                <div class="d-flex align-items-center">
+                <!-- Dark Mode Toggle and Auth Buttons -->
+                <div class="d-flex align-items-center ms-auto">
                     <button class="btn btn-outline-light btn-sm me-2" id="themeToggle" type="button">
                         <i class="fas fa-moon" id="themeIcon"></i>
                     </button>
+                    <div class="d-none d-lg-flex align-items-center">
+<?php if ($userData): ?>
+                        <div class="dropdown">
+                            <a href="#" class="nav-link dropdown-toggle d-flex align-items-center" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <img src="/uploads/avatars/<?php echo htmlspecialchars($_SESSION['avatar'] ?? 'default-avatar.svg'); ?>" width="30" height="30" class="rounded-circle me-2">
+                                <span><?php echo htmlspecialchars($userData['username']); ?></span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                <li>
+                                    <a class="dropdown-item" href="/profile/edit_profile.php">
+                                        <i class="fas fa-user-edit me-2"></i>Edit Profile
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="/profile/profile.php">
+                                        <i class="fa fa-user"></i> View Profile
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+<?php else: ?>
+                        <a href="/login.php" class="nav-link me-2"><i class="fas fa-sign-in-alt"></i> Login</a>
+                        <a href="/register.php" class="nav-link"><i class="fas fa-user-plus"></i> Sign Up</a>
+<?php endif; ?>
+                    </div>
                 </div>
             </div>
         </div>
