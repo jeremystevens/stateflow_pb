@@ -303,6 +303,13 @@ input.burn-link-input:focus,
     color: white !important;  /* White text for contrast on dark background */
 }
 
+@media (min-width: 768px) {
+    #profileTabs {
+        flex-wrap: nowrap;
+        gap: 0.5rem;
+    }
+}
+
 /* Enhanced Form Controls */
 .form-control, .form-select, textarea {
     background: var(--card-bg-light);
