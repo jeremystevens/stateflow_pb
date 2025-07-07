@@ -64,10 +64,10 @@ if (isset($_SESSION['user_id'])) {
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="/index.php">
+                       <!-- <a class="nav-link" href="/index.php">
                             <i class="fas fa-home me-1"></i>Home
                         </a>
-                    </li>
+                    </li> -->
                     <li class="nav-item">
                         <a class="nav-link" href="/pages/create.php">
                             <i class="fas fa-plus me-1"></i>Create Paste
