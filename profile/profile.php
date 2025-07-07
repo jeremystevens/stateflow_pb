@@ -92,7 +92,7 @@ include __DIR__ . '/../includes/header.php';
                         </li>
                         <li class="nav-item" role="presentation">
                             <button class="nav-link border-0 fw-semibold" id="pastes-tab" data-bs-toggle="tab" data-bs-target="#pastes" type="button" role="tab">
-                                <i class="fas fa-code me-2"></i>Recent Pastes
+                                <i class="fas fa-code me-2"></i>Pastes
                             </button>
                         </li>
                     </ul>
