@@ -33,7 +33,8 @@ class ThemeManager {
         this.theme = this.theme === 'dark' ? 'light' : 'dark';
         localStorage.setItem('theme', this.theme);
         this.applyTheme();
-        
+        document.dispatchEvent(new CustomEvent('themeChanged', { detail: this.theme }));
+
         // Add smooth transition effect
         document.body.style.transition = 'background-color 0.3s ease, color 0.3s ease';
         setTimeout(() => {
