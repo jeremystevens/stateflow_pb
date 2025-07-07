@@ -16,7 +16,10 @@ SQL
         return;
     }
 
-    $files = glob($migrationDir . '/*.php');
+    $files = array_merge(
+        glob($migrationDir . '/*.php') ?: [],
+        glob($migrationDir . '/*.sql') ?: []
+    );
     sort($files);
 
     foreach ($files as $file) {
@@ -27,9 +30,14 @@ SQL
             continue;
         }
 
-        $migration = include $file;
-        if (is_callable($migration)) {
-            $migration($pdo);
+        if (substr($file, -4) === '.php') {
+            $migration = include $file;
+            if (is_callable($migration)) {
+                $migration($pdo);
+            }
+        } elseif (substr($file, -4) === '.sql') {
+            $sql = file_get_contents($file);
+            $pdo->exec($sql);
         }
 
         $insert = $pdo->prepare('INSERT INTO migration_log (filename) VALUES (?)');
