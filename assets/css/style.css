@@ -1942,3 +1942,79 @@ button[disabled] {
     cursor: not-allowed;
     opacity: 0.6;
 }
+
+/* Profile Page Styles */
+.profile-container {
+    background: var(--card-bg-light);
+    border: 2px solid var(--border-color);
+    box-shadow: var(--card-shadow-lg);
+    border-radius: var(--border-radius);
+    max-width: 72rem;
+    margin: 0 auto;
+}
+.profile-header {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 2rem;
+    border-bottom: 2px solid var(--border-color);
+}
+@media (min-width: 768px) {
+    .profile-header {
+        flex-direction: row;
+        align-items: center;
+    }
+}
+.profile-tabs {
+    padding: 0 2rem;
+    border-bottom: 2px solid var(--border-color);
+}
+.profile-tabs .nav-link {
+    color: var(--text-primary);
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+}
+.profile-tabs .nav-link:hover {
+    background: rgba(59,130,246,0.1);
+}
+.profile-tabs .nav-link.active {
+    background: var(--primary-color);
+    color: #fff !important;
+    border-color: var(--border-color) var(--border-color) var(--primary-color);
+}
+.profile-content {
+    padding: 2rem;
+}
+.profile-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px,1fr));
+    gap: 1rem;
+}
+.profile-stat {
+    background: linear-gradient(to bottom right, rgba(59,130,246,0.15), rgba(59,130,246,0.05));
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    padding: 1rem;
+    text-align: center;
+}
+[data-bs-theme="dark"] .profile-stat {
+    background: linear-gradient(to bottom right, rgba(99,102,241,0.2), rgba(59,130,246,0.1));
+}
+.profile-summary {
+    background: var(--subtle-bg);
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+}
+
+.profile-chart {
+    background: var(--subtle-bg);
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    position: relative;
+}
+
+.profile-chart canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
