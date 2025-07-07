@@ -110,7 +110,13 @@ function getUnlockedAchievements($userId)
 function getInProgressAchievements($userId)
 {
     global $pdo;
-    $stmt = $pdo->prepare('SELECT a.name, a.description, a.icon, uap.current_progress, uap.target_progress FROM user_achievement_progress uap JOIN achievements a ON uap.achievement_id = a.id WHERE uap.user_id = ? ORDER BY uap.updated_at DESC');
-    $stmt->execute([$userId]);
+    $stmt = $pdo->prepare(
+        "SELECT a.name, a.description, a.icon, uap.current_progress, uap.target_progress
+         FROM user_achievement_progress uap
+         JOIN achievements a ON uap.achievement_id = a.id
+         WHERE uap.user_id = :user_id
+         ORDER BY uap.updated_at DESC"
+    );
+    $stmt->execute(['user_id' => $userId]);
     return $stmt->fetchAll();
 }
