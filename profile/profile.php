@@ -4,6 +4,8 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../database/init.php';
+require_once __DIR__ . '/../includes/achievements.php';
+loadAchievementsFromCSV(__DIR__ . '/../database/achievements.csv');
 
 $identifier = $_GET['uid'] ?? ($_SESSION['user_id'] ?? null);
 if (!$identifier) {
@@ -110,6 +112,10 @@ $chart2Values = [
     $totalComments
 ];
 
+$achievementStats = getUserAchievementStats($user['id']);
+$unlockedAchievements = getUnlockedAchievements($user['id']);
+$inProgressAchievements = getInProgressAchievements($user['id']);
+
 $pageTitle = htmlspecialchars($user['username']);
 include __DIR__ . '/../includes/header.php';
 ?>
@@ -202,7 +208,69 @@ include __DIR__ . '/../includes/header.php';
                 </div>
             </div>
             <div class="tab-pane fade" id="achievements" role="tabpanel">
-                <p class="text-muted">Coming soon...</p>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="profile-stat">
+                            <i class="fas fa-trophy mb-1"></i>
+                            <div class="h5 mb-0"><?= $achievementStats['unlocked'] ?></div>
+                            <small class="text-muted">Achievements Unlocked</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="profile-stat">
+                            <i class="fas fa-percentage mb-1"></i>
+                            <div class="h5 mb-0"><?= $achievementStats['completion'] ?>%</div>
+                            <small class="text-muted">Completion Rate</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="profile-stat">
+                            <i class="fas fa-star mb-1"></i>
+                            <div class="h5 mb-0"><?= $achievementStats['points'] ?></div>
+                            <small class="text-muted">Total Points</small>
+                        </div>
+                    </div>
+                </div>
+
+                <h5 class="mb-3">Unlocked Achievements</h5>
+                <div class="row g-3 mb-4">
+                    <?php foreach ($unlockedAchievements as $a): ?>
+                    <div class="col-md-4">
+                        <div class="card h-100 text-center">
+                            <div class="card-body">
+                                <i class="fas <?= htmlspecialchars($a['icon']) ?> fa-2x mb-2 text-warning"></i>
+                                <h6 class="card-title mb-1"><?= htmlspecialchars($a['name']) ?></h6>
+                                <p class="small text-muted mb-2"><?= htmlspecialchars($a['description']) ?></p>
+                                <span class="badge bg-success">Unlocked <?= date('Y-m-d', $a['unlocked_at']) ?></span>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                    <?php if (empty($unlockedAchievements)): ?>
+                        <p class="text-muted">No achievements unlocked yet.</p>
+                    <?php endif; ?>
+                </div>
+
+                <h5 class="mb-3">In Progress</h5>
+                <?php foreach ($inProgressAchievements as $a): ?>
+                <?php $percent = round(($a['current_progress'] / $a['target_progress']) * 100); ?>
+                <div class="mb-3">
+                    <div class="d-flex align-items-center mb-1">
+                        <i class="fas <?= htmlspecialchars($a['icon']) ?> me-2 text-warning"></i>
+                        <div class="flex-grow-1">
+                            <strong><?= htmlspecialchars($a['name']) ?></strong>
+                            <div class="small text-muted"><?= htmlspecialchars($a['description']) ?></div>
+                        </div>
+                        <span class="ms-2 small"><?= $percent ?>%</span>
+                    </div>
+                    <div class="progress" style="height:8px;">
+                        <div class="progress-bar" role="progressbar" style="width: <?= $percent ?>%;" aria-valuenow="<?= $percent ?>" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+                <?php if (empty($inProgressAchievements)): ?>
+                    <p class="text-muted">No achievements in progress.</p>
+                <?php endif; ?>
             </div>
             <div class="tab-pane fade" id="collections" role="tabpanel">
                 <p class="text-muted">Coming soon...</p>

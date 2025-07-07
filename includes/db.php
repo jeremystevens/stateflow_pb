@@ -28,7 +28,11 @@ function getDatabase() {
             require_once __DIR__ . '/../database/init.php';
             initializeDatabase($pdo);
         }
-        
+
+        // Run any pending database migrations
+        require_once __DIR__ . '/../database/run_migrations.php';
+        runMigrations($pdo);
+
         return $pdo;
     } catch (PDOException $e) {
         die("Database connection failed: " . $e->getMessage());
