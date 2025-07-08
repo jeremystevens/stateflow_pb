@@ -5,6 +5,11 @@
  */
 
 require_once __DIR__ . '/../includes/db.php';
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+$currentUserId = $_SESSION['user_id'] ?? null;
 
 $pasteId = $_GET['paste_id'] ?? '';
 
@@ -54,8 +59,12 @@ try {
                             <div class="comment-actions">
                                 <button class="btn btn-link btn-sm text-muted p-0 me-3" onclick="toggleReplyForm(' . $comment['id'] . ')">
                                     <i class="fas fa-reply me-1"></i>Reply
-                                </button>
-                            </div>
+                                </button>';
+            if ($currentUserId && $comment['user_id'] == $currentUserId) {
+                echo '<button class="btn btn-link btn-sm text-danger p-0 delete-comment-btn" onclick="deleteComment(' . $comment['id'] . ')" title="Delete comment">'
+                     . '<i class="fas fa-trash-alt"></i></button>';
+            }
+            echo '</div>';
                             
                             <div id="reply-form-' . $comment['id'] . '" class="reply-form mt-3" style="display: none;">
                                 <div class="mb-2">
@@ -125,5 +134,4 @@ try {
     
 } catch (Exception $e) {
     error_log("Get comments error: " . $e->getMessage());
-    echo '<div class="alert alert-danger">Error loading comments: ' . htmlspecialchars($e->getMessage()) . '</div>';
-}?>
+    echo '<div class="alert alert-danger">Error loading comments: ' . htmlspecialchars($e->getMessage()) . '</div>';}?>
