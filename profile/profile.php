@@ -68,7 +68,7 @@ function buildPageUrl($p) {
  */
 function fetchUserPastes(PDO $pdo, $uid, $limit, $offset) {
     $stmt = $pdo->prepare(
-        "SELECT id, title, created_at FROM pastes
+        "SELECT id, title, language, created_at FROM pastes
          WHERE user_id = :uid
          ORDER BY created_at DESC
          LIMIT :limit OFFSET :offset"
@@ -332,11 +332,16 @@ include __DIR__ . '/../includes/header.php';
     <?php foreach ($userPastes as $paste): ?>
     <div class="card mb-3 shadow-sm">
         <div class="card-body">
-            <h5 class="card-title">
-                <a href="/pages/view.php?id=<?php echo htmlspecialchars($paste['id']); ?>">
-                    <?php echo htmlspecialchars($paste['title'] ?: 'Untitled Paste'); ?>
-                </a>
-            </h5>
+            <div class="d-flex justify-content-between">
+                <h5 class="card-title mb-1">
+                    <a href="/pages/view.php?id=<?php echo htmlspecialchars($paste['id']); ?>">
+                        <?php echo htmlspecialchars($paste['title'] ?: 'Untitled Paste'); ?>
+                    </a>
+                </h5>
+                <span class="badge bg-secondary-subtle text-muted float-end align-self-start">
+                    <?php echo htmlspecialchars($paste['language']); ?>
+                </span>
+            </div>
             <p class="card-text text-muted mb-0">
                 <?php
                     $ts = is_numeric($paste['created_at']) ? $paste['created_at'] : strtotime($paste['created_at']);
@@ -446,6 +451,22 @@ document.addEventListener('DOMContentLoaded', function () {
             chart.update();
         });
     });
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    function bindPastePagination() {
+        $('#pastes').off('click', '.pagination a').on('click', '.pagination a', function (e) {
+            e.preventDefault();
+            const url = $(this).attr('href');
+            $.get(url, function (data) {
+                const newContent = $(data).find('#pastes').html();
+                $('#pastes').html(newContent);
+                bindPastePagination();
+            });
+        });
+    }
+    bindPastePagination();
 });
 </script>
 <?php include __DIR__ . '/../includes/footer.php'; ?>
