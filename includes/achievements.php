@@ -71,8 +71,10 @@ function updateAchievementProgress($userId, $achievementName, $increment = 1)
     if ($newProgress >= $achievement['target_progress']) {
         $pdo->prepare('DELETE FROM user_achievement_progress WHERE user_id = ? AND achievement_id = ?')
             ->execute([$userId, $achievement['id']]);
-        $pdo->prepare('INSERT INTO user_achievements (user_id, achievement_id, points) VALUES (?, ?, ?)')
-            ->execute([$userId, $achievement['id'], $achievement['points']]);
+        // user_achievements table does not store a points column
+        // Points are derived from the achievements table when needed
+        $pdo->prepare('INSERT INTO user_achievements (user_id, achievement_id) VALUES (?, ?)')
+            ->execute([$userId, $achievement['id']]);
     }
 }
 
