@@ -18,11 +18,12 @@ function loadAchievementsFromCSV($csvPath)
         fclose($handle);
         return;
     }
-    $insert = $pdo->prepare('INSERT OR IGNORE INTO achievements (name, category, description, target_progress, points, icon) VALUES (?, ?, ?, ?, ?, ?)');
+    $insert = $pdo->prepare('INSERT OR IGNORE INTO achievements (name, title, category, description, target_progress, points, icon) VALUES (?, ?, ?, ?, ?, ?, ?)');
     while (($row = fgetcsv($handle)) !== false) {
         $data = array_combine($header, $row);
         $insert->execute([
             $data['name'],
+            $data['title'] ?? $data['name'],
             $data['category'] ?? null,
             $data['description'] ?? null,
             (int)($data['target_progress'] ?? 1),
@@ -59,15 +60,21 @@ function updateAchievementProgress($userId, $achievementName, $increment = 1)
         $pdo->prepare('UPDATE user_achievement_progress SET current_progress = ?, updated_at = strftime(\'%s\',\'now\') WHERE id = ?')
             ->execute([$newProgress, $progress['id']]);
     } else {
-        $pdo->prepare('INSERT INTO user_achievement_progress (user_id, achievement_id, current_progress, target_progress) VALUES (?, ?, ?, ?)')
-            ->execute([$userId, $achievement['id'], $increment, $achievement['target_progress']]);
+        if (empty($achievementName)) {
+            error_log('Achievement name missing when inserting progress for user ' . $userId);
+            return;
+        }
+        $pdo->prepare('INSERT INTO user_achievement_progress (user_id, achievement_id, achievement_name, current_progress, target_progress) VALUES (?, ?, ?, ?, ?)')
+            ->execute([$userId, $achievement['id'], $achievementName, $increment, $achievement['target_progress']]);
         $newProgress = $increment;
     }
     if ($newProgress >= $achievement['target_progress']) {
         $pdo->prepare('DELETE FROM user_achievement_progress WHERE user_id = ? AND achievement_id = ?')
             ->execute([$userId, $achievement['id']]);
-        $pdo->prepare('INSERT INTO user_achievements (user_id, achievement_id, points) VALUES (?, ?, ?)')
-            ->execute([$userId, $achievement['id'], $achievement['points']]);
+        // user_achievements table does not store a points column
+        // Points are derived from the achievements table when needed
+        $pdo->prepare('INSERT INTO user_achievements (user_id, achievement_id) VALUES (?, ?)')
+            ->execute([$userId, $achievement['id']]);
     }
 }
 
