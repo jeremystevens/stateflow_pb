@@ -7,20 +7,18 @@ require_once __DIR__ . '/../database/init.php';
 require_once __DIR__ . '/../includes/achievements.php';
 loadAchievementsFromCSV(__DIR__ . '/../database/achievements.csv');
 
-$identifier = $_GET['uid'] ?? ($_SESSION['user_id'] ?? null);
-if (!$identifier) {
-    header('Location: /login.php');
+$usernameParam = $_GET['user'] ?? null;
+if (!$usernameParam) {
+    http_response_code(404);
+    echo 'User not specified';
     exit();
 }
 
-// Determine search field
-if (isset($_GET['uid'])) {
-    $stmt = $pdo->prepare("SELECT id, username, profile_image, tagline, website, created_at FROM users WHERE username = ?");
-    $stmt->execute([$identifier]);
-} else {
-    $stmt = $pdo->prepare("SELECT id, username, profile_image, tagline, website, created_at FROM users WHERE id = ?");
-    $stmt->execute([$identifier]);
-}
+$stmt = $pdo->prepare(
+    "SELECT id, username, profile_image, tagline, website, created_at
+     FROM users WHERE username = ?"
+);
+$stmt->execute([$usernameParam]);
 $user = $stmt->fetch();
 
 if (!$user) {
