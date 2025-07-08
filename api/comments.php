@@ -9,6 +9,12 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+require_once __DIR__ . '/../includes/achievements.php';
+loadAchievementsFromCSV(__DIR__ . '/../database/achievements.csv');
+
 // Handle preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
@@ -52,9 +58,13 @@ try {
             }
             
             // Add the comment
-            $commentId = addComment($pasteId, $content, null);
+            $userId = $_SESSION['user_id'] ?? null;
+            $commentId = addComment($pasteId, $content, $userId);
             
             if ($commentId) {
+                if ($userId) {
+                    updateAchievementProgress($userId, 'Commenter');
+                }
                 // Get the newly created comment with formatted data
                 $db = getDatabase();
                 $stmt = $db->prepare("
@@ -98,9 +108,13 @@ try {
             }
             
             // Add the reply
-            $replyId = addCommentReply($commentId, $pasteId, $content, null);
+            $userId = $_SESSION['user_id'] ?? null;
+            $replyId = addCommentReply($commentId, $pasteId, $content, $userId);
             
             if ($replyId) {
+                if ($userId) {
+                    updateAchievementProgress($userId, 'Commenter');
+                }
                 // Get the newly created reply
                 $db = getDatabase();
                 $stmt = $db->prepare("

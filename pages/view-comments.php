@@ -37,7 +37,7 @@
                                             <textarea id="comment-content" class="form-control" name="content" rows="4" placeholder="Write your comment..." required></textarea>
                                         </div>
                                         <button type="submit" class="btn btn-primary" id="comment-submit-btn">
-                                            <i class="fas fa-comment me-1"></i>Post Comment as Anonymous
+                                            <i class="fas fa-comment me-1"></i>Post Comment as <?php echo htmlspecialchars($userData['username'] ?? 'Anonymous'); ?>
                                         </button>
                                     </form>
                                 </div>
