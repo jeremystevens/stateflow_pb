@@ -1,4 +1,10 @@
 <?php
+ini_set('display_errors',1);
+ini_set('display_startup_errors',1);
+error_reporting(E_ALL);
+ini_set('memory_limit','256M');
+set_time_limit(120);
+
 session_start();
 require_once '../includes/db.php';
 require_once '../database/init.php';
@@ -869,15 +875,22 @@ include '../includes/header.php';
                                             </button>
                                         </div>
                                     </div>
-                                    <div class="code-container border rounded">
+                                    <!-- <div class="code-container border rounded"> -->
+                                    <div class="code-container border rounded overflow-auto" style="max-height:75vh;">
+
                                         <div class="code-with-lines">
                                             <div class="line-numbers-column">
-                                                <?php 
-                                                // Generate line numbers server-side
-                                                for ($i = 1; $i <= $paste['line_count']; $i++) {
-                                                    echo "<div class=\"line-number\">$i</div>";
-                                                }
-                                                ?>
+                                               <?php
+// cap at 1,000 lines so we don’t overflow
+$maxLines = min((int)$paste['line_count'], 1000);
+for ($ln = 1; $ln <= $maxLines; $ln++): ?>
+    <div class="line-number"><?php echo $ln; ?></div>
+<?php endfor;
+if ($paste['line_count'] > $maxLines): ?>
+    <div class="line-number">…</div>
+<?php endif; ?>
+
+
                                             </div>
                                             <div class="code-column">
                                                 <?php if (!empty($paste['zero_knowledge'])): ?>
