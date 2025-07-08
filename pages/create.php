@@ -2,6 +2,8 @@
 session_start();
 require_once '../includes/db.php';
 require_once '../database/init.php';
+require_once '../includes/achievements.php';
+loadAchievementsFromCSV(__DIR__ . '/../database/achievements.csv');
 $success = false;
 $error = '';
 $pasteId = '';
@@ -105,10 +107,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $userId = $_SESSION['user_id'];
                     $stmt = $pdo->prepare("INSERT INTO paste_forks (original_paste_id, forked_paste_id, forked_by_user_id) VALUES (?, ?, ?)");
                     $stmt->execute([$forkOriginalId, $pasteId, $userId]);
+                    updateAchievementProgress($userId, 'Contributor');
                 } else {
                     $stmt = $pdo->prepare("INSERT INTO paste_forks (original_paste_id, forked_paste_id) VALUES (?, ?)");
                     $stmt->execute([$forkOriginalId, $pasteId]);
                 }
+            }
+
+            if ($userId) {
+                updateAchievementProgress($userId, 'First Paste');
             }
             
             // For burn after read pastes, add secure creator token
