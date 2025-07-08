@@ -361,7 +361,11 @@ include __DIR__ . '/../includes/header.php';
             <li class="page-item <?php echo $page <= 1 ? 'disabled' : ''; ?>">
                 <a class="page-link" href="<?php echo htmlspecialchars(buildPageUrl($page - 1)); ?>">Previous</a>
             </li>
-            <?php for ($p = 1; $p <= $totalPages; $p++): ?>
+            <?php
+                $windowSize = 2; // Number of pages to show before and after the current page
+                $startPage = max(1, $page - $windowSize);
+                $endPage = min($totalPages, $page + $windowSize);
+                for ($p = $startPage; $p <= $endPage; $p++): ?>
                 <li class="page-item <?php echo $p == $page ? 'active' : ''; ?>">
                     <a class="page-link" href="<?php echo htmlspecialchars(buildPageUrl($p)); ?>">
                         <?php echo $p; ?>
