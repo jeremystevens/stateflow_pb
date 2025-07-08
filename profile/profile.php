@@ -7,21 +7,19 @@ require_once __DIR__ . '/../database/init.php';
 require_once __DIR__ . '/../includes/achievements.php';
 loadAchievementsFromCSV(__DIR__ . '/../database/achievements.csv');
 
-$identifier = $_GET['uid'] ?? ($_SESSION['user_id'] ?? null);
-if (!$identifier) {
-    header('Location: /login.php');
+$usernameParam = filter_input(INPUT_GET, 'user', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+if (!$usernameParam) {
+    http_response_code(404);
+    echo 'User not specified';
     exit();
 }
 
-// Determine search field
-if (isset($_GET['uid'])) {
-    $stmt = $pdo->prepare("SELECT id, username, profile_image, tagline, website, created_at FROM users WHERE username = ?");
-    $stmt->execute([$identifier]);
-} else {
-    $stmt = $pdo->prepare("SELECT id, username, profile_image, tagline, website, created_at FROM users WHERE id = ?");
-    $stmt->execute([$identifier]);
-}
-$user = $stmt->fetch();
+$stmt = $pdo->prepare(
+    "SELECT id, username, profile_image, tagline, website, created_at
+     FROM users WHERE username = ?"
+);
+$stmt->execute([$usernameParam]);
+$user = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$user) {
     http_response_code(404);
@@ -30,6 +28,58 @@ if (!$user) {
 }
 
 $avatar = $user['profile_image'] ? '/uploads/avatars/' . $user['profile_image'] : '/img/default-avatar.svg';
+
+// Number of pastes to display per page
+$perPage = 5;
+// Determine the requested page number
+$page = filter_input(INPUT_GET, 'page', FILTER_VALIDATE_INT, [
+    'options' => ['default' => 1, 'min_range' => 1]
+]);
+
+$profile_user_id = $user['id'];
+$profile_username = $user['username'];
+
+// Count total pastes for pagination
+$countStmt = $pdo->prepare(
+    "SELECT COUNT(*) FROM pastes WHERE user_id = :uid"
+);
+$countStmt->execute([':uid' => $profile_user_id]);
+$totalPasteCount = (int)$countStmt->fetchColumn();
+$totalPages = (int)ceil($totalPasteCount / $perPage);
+if ($totalPages > 0 && $page > $totalPages) {
+    $page = $totalPages;
+}
+$offset = ($page - 1) * $perPage;
+
+// Fetch paginated pastes for the profile user
+$userPastes = fetchUserPastes($pdo, $profile_user_id, $perPage, $offset);
+
+/**
+ * Build pagination URL preserving existing query parameters.
+ */
+function buildPageUrl($p) {
+    $params = $_GET;
+    $params['page'] = $p;
+    return '?' . http_build_query($params);
+}
+
+/**
+ * Retrieve a list of pastes for a given user.
+ */
+function fetchUserPastes(PDO $pdo, $uid, $limit, $offset) {
+    $stmt = $pdo->prepare(
+        "SELECT id, title, language, created_at FROM pastes
+         WHERE user_id = :uid
+         ORDER BY created_at DESC
+         LIMIT :limit OFFSET :offset"
+    );
+    $stmt->bindValue(':uid', $uid, PDO::PARAM_STR);
+    $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
 
 function timeAgo($timestamp) {
     $timestamp = is_numeric($timestamp) ? (int)$timestamp : strtotime($timestamp);
@@ -275,9 +325,64 @@ include __DIR__ . '/../includes/header.php';
             <div class="tab-pane fade" id="collections" role="tabpanel">
                 <p class="text-muted">Coming soon...</p>
             </div>
-            <div class="tab-pane fade" id="pastes" role="tabpanel">
-                <p class="text-muted">Coming soon...</p>
+<div class="tab-pane fade" id="pastes" role="tabpanel">
+<?php if (empty($userPastes)): ?>
+    <p class="text-muted text-center">No recent pastes found.</p>
+<?php else: ?>
+    <?php foreach ($userPastes as $paste): ?>
+    <div class="card mb-3 shadow-sm">
+        <div class="card-body">
+            <div class="d-flex justify-content-between">
+                <h5 class="card-title mb-1">
+                    <a href="/pages/view.php?id=<?php echo htmlspecialchars($paste['id']); ?>">
+                        <?php echo htmlspecialchars($paste['title'] ?: 'Untitled Paste'); ?>
+                    </a>
+                </h5>
+                <span class="badge bg-secondary-subtle text-muted float-end align-self-start">
+                    <?php echo htmlspecialchars($paste['language']); ?>
+                </span>
             </div>
+            <p class="card-text text-muted mb-0">
+                <?php
+                    $ts = is_numeric($paste['created_at']) ? $paste['created_at'] : strtotime($paste['created_at']);
+                    echo date('M j, Y', $ts);
+                ?>
+            </p>
+        </div>
+    </div>
+    <?php endforeach; ?>
+
+    <?php if ($totalPages > 1): ?>
+    <nav aria-label="Paste pagination">
+        <ul class="pagination justify-content-center">
+            <li class="page-item <?php echo $page <= 1 ? 'disabled' : ''; ?>">
+                <a class="page-link" href="<?php echo htmlspecialchars(buildPageUrl(1)); ?>">First</a>
+            </li>
+            <li class="page-item <?php echo $page <= 1 ? 'disabled' : ''; ?>">
+                <a class="page-link" href="<?php echo htmlspecialchars(buildPageUrl($page - 1)); ?>">Previous</a>
+            </li>
+            <?php
+                $windowSize = 2; // Number of pages to show before and after the current page
+                $startPage = max(1, $page - $windowSize);
+                $endPage = min($totalPages, $page + $windowSize);
+                for ($p = $startPage; $p <= $endPage; $p++): ?>
+                <li class="page-item <?php echo $p == $page ? 'active' : ''; ?>">
+                    <a class="page-link" href="<?php echo htmlspecialchars(buildPageUrl($p)); ?>">
+                        <?php echo $p; ?>
+                    </a>
+                </li>
+            <?php endfor; ?>
+            <li class="page-item <?php echo $page >= $totalPages ? 'disabled' : ''; ?>">
+                <a class="page-link" href="<?php echo htmlspecialchars(buildPageUrl($page + 1)); ?>">Next</a>
+            </li>
+            <li class="page-item <?php echo $page >= $totalPages ? 'disabled' : ''; ?>">
+                <a class="page-link" href="<?php echo htmlspecialchars(buildPageUrl($totalPages)); ?>">Last</a>
+            </li>
+        </ul>
+    </nav>
+    <?php endif; ?>
+<?php endif; ?>
+</div>
         </div>
     </div>
 </main>
@@ -350,6 +455,22 @@ document.addEventListener('DOMContentLoaded', function () {
             chart.update();
         });
     });
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    function bindPastePagination() {
+        $('#pastes').off('click', '.pagination a').on('click', '.pagination a', function (e) {
+            e.preventDefault();
+            const url = $(this).attr('href');
+            $.get(url, function (data) {
+                const newContent = $(data).find('#pastes').html();
+                $('#pastes').html(newContent);
+                bindPastePagination();
+            });
+        });
+    }
+    bindPastePagination();
 });
 </script>
 <?php include __DIR__ . '/../includes/footer.php'; ?>

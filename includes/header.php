@@ -91,7 +91,7 @@ if (isset($_SESSION['user_id'])) {
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item" href="/profile/profile.php">
+                                <a class="dropdown-item" href="/profile/<?php echo urlencode($userData['username']); ?>">
                                     <i class="fa fa-user"></i> View Profile
                                 </a>
                             </li>
@@ -130,7 +130,7 @@ if (isset($_SESSION['user_id'])) {
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item" href="/profile/profile.php">
+                                    <a class="dropdown-item" href="/profile/<?php echo urlencode($userData['username']); ?>">
                                         <i class="fa fa-user"></i> View Profile
                                     </a>
                                 </li>
