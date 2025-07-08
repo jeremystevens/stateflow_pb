@@ -40,13 +40,13 @@ $offset = ($page - 1) * $perPage;
 $profile_user_id = $user['id'];
 $profile_username = $user['username'];
 
-// Count total pastes for this user
+// Count total pastes for pagination
 $countStmt = $pdo->prepare(
     "SELECT COUNT(*) FROM pastes WHERE user_id = :uid"
 );
 $countStmt->execute([':uid' => $profile_user_id]);
-$totalPastes = $countStmt->fetchColumn();
-$totalPages = ceil($totalPastes / $perPage);
+$totalPasteCount = (int)$countStmt->fetchColumn();
+$totalPages = (int)ceil($totalPasteCount / $perPage);
 
 // Fetch paginated pastes
 $stmt = $pdo->prepare(
@@ -60,6 +60,15 @@ $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
 $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
 $stmt->execute();
 $userPastes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+/**
+ * Build pagination URL preserving existing query parameters.
+ */
+function buildPageUrl($p) {
+    $params = $_GET;
+    $params['page'] = $p;
+    return '?' . http_build_query($params);
+}
 
 
 function timeAgo($timestamp) {
@@ -307,43 +316,53 @@ include __DIR__ . '/../includes/header.php';
                 <p class="text-muted">Coming soon...</p>
             </div>
 <div class="tab-pane fade" id="pastes" role="tabpanel">
-<?php foreach ($userPastes as $paste): ?>
-  <div class="card mb-3">
-    <div class="card-body">
-      <h5 class="card-title">
-        <a href="/view.php?paste_id=<?php echo htmlspecialchars($paste['paste_id']); ?>">
-          <?php echo htmlspecialchars($paste['title']); ?>
-        </a>
-      </h5>
-      <p class="card-text text-muted">
-        <?php echo date('M j, Y', strtotime($paste['created_at'])); ?>
-      </p>
+<?php if (empty($userPastes)): ?>
+    <p class="text-muted">No recent pastes found.</p>
+<?php else: ?>
+    <?php foreach ($userPastes as $paste): ?>
+    <div class="card mb-3 shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title">
+                <a href="/pages/view.php?id=<?php echo htmlspecialchars($paste['id']); ?>">
+                    <?php echo htmlspecialchars($paste['title'] ?: 'Untitled Paste'); ?>
+                </a>
+            </h5>
+            <p class="card-text text-muted mb-0">
+                <?php
+                    $ts = is_numeric($paste['created_at']) ? $paste['created_at'] : strtotime($paste['created_at']);
+                    echo date('M j, Y', $ts);
+                ?>
+            </p>
+        </div>
     </div>
-  </div>
-<?php endforeach; ?>
-<nav aria-label="Paste pagination">
-  <ul class="pagination justify-content-center">
-    <li class="page-item <?php if ($page <= 1) echo 'disabled'; ?>">
-      <a class="page-link" href="?user=<?php echo urlencode($profile_username); ?>&page=1">First</a>
-    </li>
-    <li class="page-item <?php if ($page <= 1) echo 'disabled'; ?>">
-      <a class="page-link" href="?user=<?php echo urlencode($profile_username); ?>&page=<?php echo $page - 1; ?>">Previous</a>
-    </li>
-    <?php for ($p = 1; $p <= $totalPages; $p++): ?>
-      <li class="page-item <?php if ($p == $page) echo 'active'; ?>">
-        <a class="page-link" href="?user=<?php echo urlencode($profile_username); ?>&page=<?php echo $p; ?>">
-          <?php echo $p; ?>
-        </a>
-      </li>
-    <?php endfor; ?>
-    <li class="page-item <?php if ($page >= $totalPages) echo 'disabled'; ?>">
-      <a class="page-link" href="?user=<?php echo urlencode($profile_username); ?>&page=<?php echo $page + 1; ?>">Next</a>
-    </li>
-    <li class="page-item <?php if ($page >= $totalPages) echo 'disabled'; ?>">
-      <a class="page-link" href="?user=<?php echo urlencode($profile_username); ?>&page=<?php echo $totalPages; ?>">Last</a>
-    </li>
-  </ul>
-</nav>
+    <?php endforeach; ?>
+
+    <?php if ($totalPages > 1): ?>
+    <nav aria-label="Paste pagination">
+        <ul class="pagination justify-content-center">
+            <li class="page-item <?php echo $page <= 1 ? 'disabled' : ''; ?>">
+                <a class="page-link" href="<?php echo htmlspecialchars(buildPageUrl(1)); ?>">First</a>
+            </li>
+            <li class="page-item <?php echo $page <= 1 ? 'disabled' : ''; ?>">
+                <a class="page-link" href="<?php echo htmlspecialchars(buildPageUrl($page - 1)); ?>">Previous</a>
+            </li>
+            <?php for ($p = 1; $p <= $totalPages; $p++): ?>
+                <li class="page-item <?php echo $p == $page ? 'active' : ''; ?>">
+                    <a class="page-link" href="<?php echo htmlspecialchars(buildPageUrl($p)); ?>">
+                        <?php echo $p; ?>
+                    </a>
+                </li>
+            <?php endfor; ?>
+            <li class="page-item <?php echo $page >= $totalPages ? 'disabled' : ''; ?>">
+                <a class="page-link" href="<?php echo htmlspecialchars(buildPageUrl($page + 1)); ?>">Next</a>
+            </li>
+            <li class="page-item <?php echo $page >= $totalPages ? 'disabled' : ''; ?>">
+                <a class="page-link" href="<?php echo htmlspecialchars(buildPageUrl($totalPages)); ?>">Last</a>
+            </li>
+        </ul>
+    </nav>
+    <?php endif; ?>
+<?php endif; ?>
 </div>
         </div>
     </div>
