@@ -65,8 +65,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'add_comment') {
         $content = trim($_POST['content'] ?? '');
         if (!empty($content)) {
-            $result = addComment($pasteId, $content, null); // null for anonymous
+            $userId = $_SESSION['user_id'] ?? null;
+            $result = addComment($pasteId, $content, $userId);
             if ($result) {
+                if ($userId) {
+                    updateAchievementProgress($userId, 'Commenter');
+                }
                 $success = 'Comment added successfully!';
             } else {
                 $error = 'Failed to add comment.';
@@ -1077,7 +1081,7 @@ if ($paste['line_count'] > $maxLines): ?>
                                             <textarea id="comment-content" class="form-control" name="content" rows="4" placeholder="Write your comment..." required></textarea>
                                         </div>
                                         <button type="submit" class="btn btn-primary" id="comment-submit-btn">
-                                            <i class="fas fa-comment me-1"></i>Post Comment as Anonymous
+                                            <i class="fas fa-comment me-1"></i>Post Comment as <?php echo htmlspecialchars($userData['username'] ?? 'Anonymous'); ?>
                                         </button>
                                     </form>
                                 </div>
