@@ -7,7 +7,7 @@ require_once __DIR__ . '/../database/init.php';
 require_once __DIR__ . '/../includes/achievements.php';
 loadAchievementsFromCSV(__DIR__ . '/../database/achievements.csv');
 
-$usernameParam = $_GET['user'] ?? null;
+$usernameParam = filter_input(INPUT_GET, 'user', FILTER_SANITIZE_STRING);
 if (!$usernameParam) {
     http_response_code(404);
     echo 'User not specified';
@@ -19,7 +19,7 @@ $stmt = $pdo->prepare(
      FROM users WHERE username = ?"
 );
 $stmt->execute([$usernameParam]);
-$user = $stmt->fetch();
+$user = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$user) {
     http_response_code(404);
@@ -32,10 +32,9 @@ $avatar = $user['profile_image'] ? '/uploads/avatars/' . $user['profile_image'] 
 // Number of pastes to display per page
 $perPage = 5;
 // Determine the requested page number
-$page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
-if ($page < 1) {
-    $page = 1;
-}
+$page = filter_input(INPUT_GET, 'page', FILTER_VALIDATE_INT, [
+    'options' => ['default' => 1, 'min_range' => 1]
+]);
 
 $profile_user_id = $user['id'];
 $profile_username = $user['username'];
@@ -52,18 +51,8 @@ if ($totalPages > 0 && $page > $totalPages) {
 }
 $offset = ($page - 1) * $perPage;
 
-// Fetch paginated pastes
-$stmt = $pdo->prepare(
-    "SELECT * FROM pastes
-     WHERE user_id = :uid
-     ORDER BY created_at DESC
-     LIMIT :limit OFFSET :offset"
-);
-$stmt->bindValue(':uid', $profile_user_id, PDO::PARAM_INT);
-$stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
-$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-$stmt->execute();
-$userPastes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// Fetch paginated pastes for the profile user
+$userPastes = fetchUserPastes($pdo, $profile_user_id, $perPage, $offset);
 
 /**
  * Build pagination URL preserving existing query parameters.
@@ -72,6 +61,23 @@ function buildPageUrl($p) {
     $params = $_GET;
     $params['page'] = $p;
     return '?' . http_build_query($params);
+}
+
+/**
+ * Retrieve a list of pastes for a given user.
+ */
+function fetchUserPastes(PDO $pdo, $uid, $limit, $offset) {
+    $stmt = $pdo->prepare(
+        "SELECT id, title, created_at FROM pastes
+         WHERE user_id = :uid
+         ORDER BY created_at DESC
+         LIMIT :limit OFFSET :offset"
+    );
+    $stmt->bindValue(':uid', $uid, PDO::PARAM_STR);
+    $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
 
@@ -321,7 +327,7 @@ include __DIR__ . '/../includes/header.php';
             </div>
 <div class="tab-pane fade" id="pastes" role="tabpanel">
 <?php if (empty($userPastes)): ?>
-    <p class="text-muted">No recent pastes found.</p>
+    <p class="text-muted text-center">No recent pastes found.</p>
 <?php else: ?>
     <?php foreach ($userPastes as $paste): ?>
     <div class="card mb-3 shadow-sm">
