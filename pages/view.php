@@ -1828,6 +1828,27 @@ if ($paste['line_count'] > $maxLines): ?>
         });
     }
 
+    // Delete a comment via AJAX
+    function deleteComment(commentId) {
+        if (!confirm('Are you sure you want to delete this comment?')) {
+            return;
+        }
+
+        $.post('/api/delete_comment.php', { comment_id: commentId })
+            .done(function(response) {
+                if (response.success) {
+                    // Remove comment element from DOM
+                    document.querySelector('[data-comment-id="' + commentId + '"]').remove();
+                    showNotification('Comment deleted', 'success');
+                } else {
+                    showNotification(response.error || 'Failed to delete comment', 'error');
+                }
+            })
+            .fail(function() {
+                showNotification('Failed to delete comment', 'error');
+            });
+    }
+
     // Show notification
     function showNotification(message, type = 'info') {
         // Remove existing notifications
