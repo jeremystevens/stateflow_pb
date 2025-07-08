@@ -25,8 +25,19 @@ try {
     } else {
         foreach ($comments as $comment) {
             $replies = getCommentReplies($comment['id']);
-            $avatarUrl = $comment['profile_image'] ?: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiM5Y2E2ZjciLz4KPHN2ZyB4PSIxMCIgeT0iMTAiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgdmlld0JveD0iMCAwIDIwIDIwIiBmaWxsPSIjZmZmIj4KPHBhdGggZD0iTTEwIDEwYy0xIDAtMS41LS41LTEuNS0xLjVzLjUtMS41IDEuNS0xLjUgMS41LjUgMS41IDEuNS0uNSAxLjUtMS41IDEuNXptNSAwYy40NSAwIDEuMi0uNSAxLjItMS41cy0uNS0xLjUtMS4yLTEuNS0xLjIuNS0xLjIgMS41LjUgMS41IDEuMiAxLjV6Ii8+Cjwvc3ZnPgo8L3N2Zz4K';
+            $avatarFile = $comment['profile_image'];
+            $avatarPath = __DIR__ . '/../uploads/avatars/' . $avatarFile;
+            if ($avatarFile && file_exists($avatarPath)) {
+                $avatarUrl = '/uploads/avatars/' . $avatarFile;
+            } else {
+                $avatarUrl = '/img/default-avatar.svg';
+            }
             $username = $comment['username'] ?: 'Anonymous';
+            if ($comment['username']) {
+                $usernameLink = '<a href="/profile/' . urlencode($username) . '">' . htmlspecialchars($username) . '</a>';
+            } else {
+                $usernameLink = htmlspecialchars($username);
+            }
             $formattedDate = date('M j, Y \a\t g:i A', $comment['created_at']);
             
             echo '<div class="comment-item mb-4 p-3 border rounded" data-comment-id="' . $comment['id'] . '">
@@ -36,7 +47,7 @@ try {
                         </div>
                         <div class="flex-grow-1">
                             <div class="d-flex align-items-center mb-2">
-                                <strong class="me-2">' . htmlspecialchars($username) . '</strong>
+                                <strong class="me-2">' . $usernameLink . '</strong>
                                 <small class="text-muted">' . $formattedDate . '</small>
                             </div>
                             <p class="mb-2">' . nl2br(htmlspecialchars($comment['content'])) . '</p>
@@ -72,8 +83,19 @@ try {
                         <div class="replies ms-4 mt-2 border-start ps-3" id="replies-content-' . $comment['id'] . '" style="display: none;">';
                 
                 foreach ($replies as $reply) {
-                    $replyAvatarUrl = $reply['profile_image'] ?: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiIGZpbGw9IiM5Y2E2ZjciLz4KPHN2ZyB4PSI2IiB5PSI2IiB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0iI2ZmZiI+CjxwYXRoIGQ9Ik0xMCAxMGMtMSAwLTEuNS0uNS0xLjUtMS41cy41LTEuNSAxLjUtMS41IDEuNS41IDEuNSAxLjUtLjUgMS41LTEuNSAxLjV6bTUgMGMuNDUgMCAxLjItLjUgMS4yLTEuNXMtLjUtMS41LTEuMi0xLjUtMS4yLjUtMS4yIDEuNS41IDEuNSAxLjIgMS41eiIvPgo8L3N2Zz4KPC9zdmc+Cg==';
+                    $replyAvatarFile = $reply['profile_image'];
+                    $replyAvatarPath = __DIR__ . '/../uploads/avatars/' . $replyAvatarFile;
+                    if ($replyAvatarFile && file_exists($replyAvatarPath)) {
+                        $replyAvatarUrl = '/uploads/avatars/' . $replyAvatarFile;
+                    } else {
+                        $replyAvatarUrl = '/img/default-avatar.svg';
+                    }
                     $replyUsername = $reply['username'] ?: 'Anonymous';
+                    if ($reply['username']) {
+                        $replyUsernameLink = '<a href="/profile/' . urlencode($replyUsername) . '">' . htmlspecialchars($replyUsername) . '</a>';
+                    } else {
+                        $replyUsernameLink = htmlspecialchars($replyUsername);
+                    }
                     $replyFormattedDate = date('M j, Y \a\t g:i A', $reply['created_at']);
                     
                     echo '<div class="reply-item mb-3 p-2 bg-body-secondary rounded">
@@ -83,7 +105,7 @@ try {
                                 </div>
                                 <div class="flex-grow-1">
                                     <div class="d-flex align-items-center mb-1">
-                                        <strong class="me-2">' . htmlspecialchars($replyUsername) . '</strong>
+                                        <strong class="me-2">' . $replyUsernameLink . '</strong>
                                         <small class="text-muted">' . $replyFormattedDate . '</small>
                                     </div>
                                     <p class="mb-0 small">' . nl2br(htmlspecialchars($reply['content'])) . '</p>
@@ -104,5 +126,4 @@ try {
 } catch (Exception $e) {
     error_log("Get comments error: " . $e->getMessage());
     echo '<div class="alert alert-danger">Error loading comments: ' . htmlspecialchars($e->getMessage()) . '</div>';
-}
-?>
+}?>

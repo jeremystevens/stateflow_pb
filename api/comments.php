@@ -81,7 +81,7 @@ try {
                     'id' => $comment['id'],
                     'content' => $comment['content'],
                     'username' => $comment['username'] ?: 'Anonymous',
-                    'profile_image' => $comment['profile_image'],
+                    'profile_image' => $comment['profile_image'] ? '/uploads/avatars/' . $comment['profile_image'] : '/img/default-avatar.svg',
                     'created_at' => $comment['created_at'],
                     'formatted_date' => date('M j, Y \a\t g:i A', $comment['created_at'])
                 ];
@@ -131,7 +131,7 @@ try {
                     'id' => $reply['id'],
                     'content' => $reply['content'],
                     'username' => $reply['username'] ?: 'Anonymous',
-                    'profile_image' => $reply['profile_image'],
+                    'profile_image' => $reply['profile_image'] ? '/uploads/avatars/' . $reply['profile_image'] : '/img/default-avatar.svg',
                     'created_at' => $reply['created_at'],
                     'formatted_date' => date('M j, Y \a\t g:i A', $reply['created_at'])
                 ];
@@ -161,7 +161,7 @@ try {
                         'id' => $reply['id'],
                         'content' => $reply['content'],
                         'username' => $reply['username'] ?: 'Anonymous',
-                        'profile_image' => $reply['profile_image'],
+                        'profile_image' => $reply['profile_image'] ? '/uploads/avatars/' . $reply['profile_image'] : '/img/default-avatar.svg',
                         'created_at' => $reply['created_at'],
                         'formatted_date' => date('M j, Y \a\t g:i A', $reply['created_at'])
                     ];
@@ -171,7 +171,7 @@ try {
                     'id' => $comment['id'],
                     'content' => $comment['content'],
                     'username' => $comment['username'] ?: 'Anonymous',
-                    'profile_image' => $comment['profile_image'],
+                    'profile_image' => $comment['profile_image'] ? '/uploads/avatars/' . $comment['profile_image'] : '/img/default-avatar.svg',
                     'created_at' => $comment['created_at'],
                     'formatted_date' => date('M j, Y \a\t g:i A', $comment['created_at']),
                     'replies' => $formattedReplies
@@ -194,5 +194,4 @@ try {
     error_log("Comments API Error: " . $e->getMessage());
     http_response_code(500);
     echo json_encode(['error' => 'Internal server error: ' . $e->getMessage()]);
-}
-?>
+}?>
