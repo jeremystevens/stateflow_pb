@@ -60,8 +60,12 @@ function updateAchievementProgress($userId, $achievementName, $increment = 1)
         $pdo->prepare('UPDATE user_achievement_progress SET current_progress = ?, updated_at = strftime(\'%s\',\'now\') WHERE id = ?')
             ->execute([$newProgress, $progress['id']]);
     } else {
-        $pdo->prepare('INSERT INTO user_achievement_progress (user_id, achievement_id, current_progress, target_progress) VALUES (?, ?, ?, ?)')
-            ->execute([$userId, $achievement['id'], $increment, $achievement['target_progress']]);
+        if (empty($achievementName)) {
+            error_log('Achievement name missing when inserting progress for user ' . $userId);
+            return;
+        }
+        $pdo->prepare('INSERT INTO user_achievement_progress (user_id, achievement_id, achievement_name, current_progress, target_progress) VALUES (?, ?, ?, ?, ?)')
+            ->execute([$userId, $achievement['id'], $achievementName, $increment, $achievement['target_progress']]);
         $newProgress = $increment;
     }
     if ($newProgress >= $achievement['target_progress']) {
