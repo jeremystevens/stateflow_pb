@@ -31,6 +31,37 @@ if (!$user) {
 
 $avatar = $user['profile_image'] ? '/uploads/avatars/' . $user['profile_image'] : '/img/default-avatar.svg';
 
+// Number of pastes per page
+$perPage = 5;
+// Current page from query param (default: 1)
+$page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
+$offset = ($page - 1) * $perPage;
+
+$profile_user_id = $user['id'];
+$profile_username = $user['username'];
+
+// Count total pastes for this user
+$countStmt = $pdo->prepare(
+    "SELECT COUNT(*) FROM pastes WHERE user_id = :uid"
+);
+$countStmt->execute([':uid' => $profile_user_id]);
+$totalPastes = $countStmt->fetchColumn();
+$totalPages = ceil($totalPastes / $perPage);
+
+// Fetch paginated pastes
+$stmt = $pdo->prepare(
+    "SELECT * FROM pastes
+     WHERE user_id = :uid
+     ORDER BY created_at DESC
+     LIMIT :limit OFFSET :offset"
+);
+$stmt->bindValue(':uid', $profile_user_id, PDO::PARAM_INT);
+$stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
+$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+$stmt->execute();
+$userPastes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+
 function timeAgo($timestamp) {
     $timestamp = is_numeric($timestamp) ? (int)$timestamp : strtotime($timestamp);
     $diff = time() - $timestamp;
@@ -275,9 +306,45 @@ include __DIR__ . '/../includes/header.php';
             <div class="tab-pane fade" id="collections" role="tabpanel">
                 <p class="text-muted">Coming soon...</p>
             </div>
-            <div class="tab-pane fade" id="pastes" role="tabpanel">
-                <p class="text-muted">Coming soon...</p>
-            </div>
+<div class="tab-pane fade" id="pastes" role="tabpanel">
+<?php foreach ($userPastes as $paste): ?>
+  <div class="card mb-3">
+    <div class="card-body">
+      <h5 class="card-title">
+        <a href="/view.php?paste_id=<?php echo htmlspecialchars($paste['paste_id']); ?>">
+          <?php echo htmlspecialchars($paste['title']); ?>
+        </a>
+      </h5>
+      <p class="card-text text-muted">
+        <?php echo date('M j, Y', strtotime($paste['created_at'])); ?>
+      </p>
+    </div>
+  </div>
+<?php endforeach; ?>
+<nav aria-label="Paste pagination">
+  <ul class="pagination justify-content-center">
+    <li class="page-item <?php if ($page <= 1) echo 'disabled'; ?>">
+      <a class="page-link" href="?user=<?php echo urlencode($profile_username); ?>&page=1">First</a>
+    </li>
+    <li class="page-item <?php if ($page <= 1) echo 'disabled'; ?>">
+      <a class="page-link" href="?user=<?php echo urlencode($profile_username); ?>&page=<?php echo $page - 1; ?>">Previous</a>
+    </li>
+    <?php for ($p = 1; $p <= $totalPages; $p++): ?>
+      <li class="page-item <?php if ($p == $page) echo 'active'; ?>">
+        <a class="page-link" href="?user=<?php echo urlencode($profile_username); ?>&page=<?php echo $p; ?>">
+          <?php echo $p; ?>
+        </a>
+      </li>
+    <?php endfor; ?>
+    <li class="page-item <?php if ($page >= $totalPages) echo 'disabled'; ?>">
+      <a class="page-link" href="?user=<?php echo urlencode($profile_username); ?>&page=<?php echo $page + 1; ?>">Next</a>
+    </li>
+    <li class="page-item <?php if ($page >= $totalPages) echo 'disabled'; ?>">
+      <a class="page-link" href="?user=<?php echo urlencode($profile_username); ?>&page=<?php echo $totalPages; ?>">Last</a>
+    </li>
+  </ul>
+</nav>
+</div>
         </div>
     </div>
 </main>
