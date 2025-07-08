@@ -7,7 +7,7 @@ require_once __DIR__ . '/../database/init.php';
 require_once __DIR__ . '/../includes/achievements.php';
 loadAchievementsFromCSV(__DIR__ . '/../database/achievements.csv');
 
-$usernameParam = filter_input(INPUT_GET, 'user', FILTER_SANITIZE_STRING);
+$usernameParam = filter_input(INPUT_GET, 'user', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 if (!$usernameParam) {
     http_response_code(404);
     echo 'User not specified';
