@@ -18,11 +18,12 @@ function loadAchievementsFromCSV($csvPath)
         fclose($handle);
         return;
     }
-    $insert = $pdo->prepare('INSERT OR IGNORE INTO achievements (name, category, description, target_progress, points, icon) VALUES (?, ?, ?, ?, ?, ?)');
+    $insert = $pdo->prepare('INSERT OR IGNORE INTO achievements (name, title, category, description, target_progress, points, icon) VALUES (?, ?, ?, ?, ?, ?, ?)');
     while (($row = fgetcsv($handle)) !== false) {
         $data = array_combine($header, $row);
         $insert->execute([
             $data['name'],
+            $data['title'] ?? $data['name'],
             $data['category'] ?? null,
             $data['description'] ?? null,
             (int)($data['target_progress'] ?? 1),

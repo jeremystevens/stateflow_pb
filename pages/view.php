@@ -8,6 +8,8 @@ set_time_limit(120);
 session_start();
 require_once '../includes/db.php';
 require_once '../database/init.php';
+require_once '../includes/achievements.php';
+loadAchievementsFromCSV(__DIR__ . '/../database/achievements.csv');
 
 $pasteId = $_GET['id'] ?? '';
 $viewThread = $_GET['view_thread'] ?? '';
@@ -152,19 +154,25 @@ if (empty($pasteId)) {
                     // This is a real view - check if paste should be burned
                     if (shouldBurnPaste($pasteId)) {
                         // Increment view count first, then burn the paste
-                        incrementViewCount($pasteId, $userIP);
+                        if (incrementViewCount($pasteId, $userIP) && !empty($paste['user_id'])) {
+                            updateAchievementProgress($paste['user_id'], 'Popular');
+                        }
                         burnPaste($pasteId);
                         
                         // Show burn notification
                         $burnNotification = true;
                     } else {
                         // Not ready to burn yet
-                        incrementViewCount($pasteId, $userIP);
+                        if (incrementViewCount($pasteId, $userIP) && !empty($paste['user_id'])) {
+                            updateAchievementProgress($paste['user_id'], 'Popular');
+                        }
                     }
                 }
             } else {
                 // Normal paste - increment view count
-                incrementViewCount($pasteId, $userIP);
+                if (incrementViewCount($pasteId, $userIP) && !empty($paste['user_id'])) {
+                    updateAchievementProgress($paste['user_id'], 'Popular');
+                }
             }
             
             // Count lines in the paste content for proper line number generation
