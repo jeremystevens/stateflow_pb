@@ -29,11 +29,13 @@ if (!$user) {
 
 $avatar = $user['profile_image'] ? '/uploads/avatars/' . $user['profile_image'] : '/img/default-avatar.svg';
 
-// Number of pastes per page
+// Number of pastes to display per page
 $perPage = 5;
-// Current page from query param (default: 1)
+// Determine the requested page number
 $page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
-$offset = ($page - 1) * $perPage;
+if ($page < 1) {
+    $page = 1;
+}
 
 $profile_user_id = $user['id'];
 $profile_username = $user['username'];
@@ -45,6 +47,10 @@ $countStmt = $pdo->prepare(
 $countStmt->execute([':uid' => $profile_user_id]);
 $totalPasteCount = (int)$countStmt->fetchColumn();
 $totalPages = (int)ceil($totalPasteCount / $perPage);
+if ($totalPages > 0 && $page > $totalPages) {
+    $page = $totalPages;
+}
+$offset = ($page - 1) * $perPage;
 
 // Fetch paginated pastes
 $stmt = $pdo->prepare(
