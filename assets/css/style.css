@@ -1084,7 +1084,7 @@ html {
 }
 
 .dropdown-menu {
-    z-index: 9999 !important;
+    z-index: 1050 !important;
     position: absolute !important;
     border-radius: 12px;
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
@@ -1129,7 +1129,7 @@ html {
     right: 0 !important;
     left: auto !important;
     min-width: 200px;
-    z-index: 10000 !important;
+    z-index: 1050 !important;
     position: absolute !important;
 }
 
@@ -1159,7 +1159,7 @@ html {
 
 /* Special handling for dropdown positioning */
 .paste-header .dropdown {
-    z-index: 10001 !important;
+    z-index: 1050 !important;
     position: relative !important;
 }
 
@@ -1169,7 +1169,7 @@ html {
 }
 
 .paste-header .dropdown-menu.show {
-    z-index: 2147483647 !important; /* Maximum safe z-index */
+    z-index: 1050 !important;
     position: absolute !important;
     will-change: transform !important;
     backface-visibility: hidden !important;
@@ -2141,12 +2141,12 @@ button[disabled] {
 
 .paste-header .dropdown {
     position: relative;
-    z-index: 11;
+    z-index: 1050;
 }
 
 .paste-header .dropdown-menu {
     position: absolute;
-    z-index: 12;
+    z-index: 1050;
     will-change: transform;
 }
 
