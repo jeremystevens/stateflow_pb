@@ -500,25 +500,25 @@ function getDiscussionPosts($threadId) {
     return $stmt->fetchAll();
 }
 
-function createDiscussionThread($pasteId, $title, $category, $content, $username = 'Anonymous') {
+function createDiscussionThread($pasteId, $title, $category, $content, $userId = null, $username = 'Anonymous') {
     $db = getDatabase();
     $db->beginTransaction();
     
     try {
         // Create thread
-        $stmt = $db->prepare("
-            INSERT INTO paste_discussion_threads (paste_id, username, title, category)
-            VALUES (?, ?, ?, ?)
-        ");
-        $stmt->execute([$pasteId, $username, $title, $category]);
+        $stmt = $db->prepare(
+            "INSERT INTO paste_discussion_threads (paste_id, user_id, username, title, category)
+            VALUES (?, ?, ?, ?, ?)"
+        );
+        $stmt->execute([$pasteId, $userId, $username, $title, $category]);
         $threadId = $db->lastInsertId();
         
         // Create initial post
-        $stmt = $db->prepare("
-            INSERT INTO paste_discussion_posts (thread_id, username, content)
-            VALUES (?, ?, ?)
-        ");
-        $stmt->execute([$threadId, $username, $content]);
+        $stmt = $db->prepare(
+            "INSERT INTO paste_discussion_posts (thread_id, user_id, username, content)
+            VALUES (?, ?, ?, ?)"
+        );
+        $stmt->execute([$threadId, $userId, $username, $content]);
         
         $db->commit();
         return $threadId;
@@ -528,13 +528,13 @@ function createDiscussionThread($pasteId, $title, $category, $content, $username
     }
 }
 
-function addDiscussionPost($threadId, $content, $username = 'Anonymous') {
+function addDiscussionPost($threadId, $content, $userId = null, $username = 'Anonymous') {
     $db = getDatabase();
-    $stmt = $db->prepare("
-        INSERT INTO paste_discussion_posts (thread_id, username, content)
-        VALUES (?, ?, ?)
-    ");
-    $stmt->execute([$threadId, $username, $content]);
+    $stmt = $db->prepare(
+        "INSERT INTO paste_discussion_posts (thread_id, user_id, username, content)
+        VALUES (?, ?, ?, ?)"
+    );
+    $stmt->execute([$threadId, $userId, $username, $content]);
     return $db->lastInsertId();
 }
 

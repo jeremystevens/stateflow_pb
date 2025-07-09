@@ -82,11 +82,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $title = trim($_POST['title'] ?? '');
         $category = trim($_POST['category'] ?? '');
         $content = trim($_POST['content'] ?? '');
+        $userId = $_SESSION['user_id'] ?? null;
         $username = trim($_POST['username'] ?? 'Anonymous');
+        if ($userId) {
+            $username = $_SESSION['username'] ?? null;
+            if (!$username) {
+                $stmt = $pdo->prepare('SELECT username FROM users WHERE id = ?');
+                $stmt->execute([$userId]);
+                $username = $stmt->fetchColumn() ?: 'Anonymous';
+                $_SESSION['username'] = $username;
+            }
+        }
         
         if (!empty($title) && !empty($category) && !empty($content)) {
             try {
-                $threadId = createDiscussionThread($pasteId, $title, $category, $content, $username);
+                $threadId = createDiscussionThread($pasteId, $title, $category, $content, $userId, $username);
                 if ($threadId) {
                     // Redirect to discussions tab to show the new thread
                     header("Location: " . $_SERVER['PHP_SELF'] . "?id=" . $pasteId . "#discussions");
@@ -103,11 +113,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'add_discussion_post') {
         $threadId = $_POST['thread_id'] ?? '';
         $content = trim($_POST['content'] ?? '');
+        $userId = $_SESSION['user_id'] ?? null;
         $username = trim($_POST['username'] ?? 'Anonymous');
+        if ($userId) {
+            $username = $_SESSION['username'] ?? null;
+            if (!$username) {
+                $stmt = $pdo->prepare('SELECT username FROM users WHERE id = ?');
+                $stmt->execute([$userId]);
+                $username = $stmt->fetchColumn() ?: 'Anonymous';
+                $_SESSION['username'] = $username;
+            }
+        }
         
         if (!empty($content) && !empty($threadId)) {
             try {
-                $postId = addDiscussionPost($threadId, $content, $username);
+                $postId = addDiscussionPost($threadId, $content, $userId, $username);
                 if ($postId) {
                     // Redirect back to the thread view
                     header("Location: " . $_SERVER['PHP_SELF'] . "?id=" . $pasteId . "&thread=" . $threadId . "#discussions");
@@ -1158,11 +1178,16 @@ if ($paste['line_count'] > $maxLines): ?>
                                                     <input type="hidden" name="action" value="add_discussion_post">
                                                     <input type="hidden" name="thread_id" value="<?= $thread['id'] ?>">
                                                     
+                                                    <?php if (!empty($userData['username'])): ?>
+                                                        <input type="hidden" name="username" value="<?= htmlspecialchars($userData['username']) ?>">
+                                                        <p class="mb-3">Replying as <?= htmlspecialchars($userData['username']) ?></p>
+                                                    <?php else: ?>
                                                     <div class="mb-3">
                                                         <label for="reply-username" class="form-label">Your Name</label>
-                                                        <input type="text" class="form-control" name="username" id="reply-username" 
+                                                        <input type="text" class="form-control" name="username" id="reply-username"
                                                                value="Anonymous" required>
                                                     </div>
+                                                    <?php endif; ?>
                                                     
                                                     <div class="mb-3">
                                                         <label for="reply-content" class="form-label">Your Reply</label>
