@@ -358,3 +358,46 @@
         </div>
     </div>
 
+    <!-- Create Thread Modal -->
+    <div class="modal fade" id="create-thread-modal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="POST" id="create-thread-modal-form">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Start New Discussion</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="action" value="create_discussion_thread">
+                        <input type="hidden" name="paste_id" value="<?php echo $paste['id']; ?>">
+                        <div class="mb-3">
+                            <label for="thread-title-modal" class="form-label">Discussion Title</label>
+                            <input type="text" class="form-control" id="thread-title-modal" name="title" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="thread-category-modal" class="form-label">Category</label>
+                            <select class="form-select" id="thread-category-modal" name="category" required>
+                                <option value="">Choose category...</option>
+                                <option value="Q&A">Q&A - Questions & Answers</option>
+                                <option value="Tip">Tip - Helpful Tips</option>
+                                <option value="Idea">Idea - Improvements & Ideas</option>
+                                <option value="Bug">Bug - Bug Reports</option>
+                                <option value="General">General - General Discussion</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="thread-content-modal" class="form-label">Initial Post</label>
+                            <textarea class="form-control" id="thread-content-modal" name="content" rows="5" required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane me-1"></i>Create Discussion
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+

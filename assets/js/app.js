@@ -655,6 +655,17 @@ function showCopySuccess(button) {
     }, 2000);
 }
 
+// Global function to open the "Create Thread" modal if not already defined
+if (typeof showCreateThreadForm === 'undefined') {
+    function showCreateThreadForm() {
+        const modalEl = document.getElementById('create-thread-modal');
+        if (modalEl) {
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        }
+    }
+}
+
 // Export for potential use in other scripts
 window.PasteForge = {
     ThemeManager,
