@@ -7,7 +7,7 @@ if (!isset($pdo)) {
 }
 $userData = null;
 if (isset($_SESSION['user_id'])) {
-    $stmt = $pdo->prepare("SELECT username, profile_image FROM users WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT id, username, profile_image FROM users WHERE id = ?");
     $stmt->execute([$_SESSION['user_id']]);
     $userData = $stmt->fetch();
     if ($userData) {
