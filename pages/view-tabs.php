@@ -143,7 +143,7 @@
                                     
                                     <div class="thread-posts">
                                         <?php foreach ($threadPosts as $index => $post): ?>
-                                        <div class="card mb-3 <?= $index === 0 ? 'border-primary' : '' ?>">
+                                        <div class="card mb-3 <?= $index === 0 ? 'border-primary' : '' ?>" data-post-id="<?= $post['id'] ?>">
                                             <div class="card-body">
                                                 <div class="d-flex justify-content-between align-items-start mb-2">
                                                     <div class="d-flex align-items-center gap-2">
@@ -157,8 +157,14 @@
                                                         </div>
                                                     </div>
                                                     <small class="text-muted"><?= date('M j, Y \a\t g:i A', $post['created_at']) ?></small>
+                                                    <?php if (isset($_SESSION['user_id']) && $post['user_id'] == $_SESSION['user_id']): ?>
+                                                        <div class="ms-2">
+                                                            <button type="button" class="btn btn-sm btn-link edit-post" data-post-id="<?= $post['id'] ?>"><i class="fas fa-edit"></i></button>
+                                                            <button type="button" class="btn btn-sm btn-link text-danger delete-post" data-post-id="<?= $post['id'] ?>"><i class="fas fa-trash"></i></button>
+                                                        </div>
+                                                    <?php endif; ?>
                                                 </div>
-                                                <div class="mt-2">
+                                                <div class="mt-2" id="post-content-<?= $post['id'] ?>">
                                                     <?= nl2br(htmlspecialchars($post['content'])) ?>
                                                 </div>
                                             </div>
@@ -178,8 +184,8 @@
                                                     
                                                     <div class="mb-3">
                                                         <label for="reply-username" class="form-label">Your Name</label>
-                                                        <input type="text" class="form-control" name="username" id="reply-username" 
-                                                               value="Anonymous" required>
+                                                        <input type="text" class="form-control" name="username" id="reply-username"
+                                                               value="<?= htmlspecialchars($userData['username'] ?? 'Anonymous') ?>" <?= isset($userData['username']) ? 'readonly' : '' ?> required>
                                                     </div>
                                                     
                                                     <div class="mb-3">
@@ -192,6 +198,41 @@
                                                         <i class="fas fa-reply me-1"></i>Post Reply
                                                     </button>
                                                 </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Edit Thread Modal -->
+                                    <div class="modal fade" id="editThreadModal" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Edit Thread</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="mb-3">
+                                                        <label for="edit-thread-title" class="form-label">Title</label>
+                                                        <input type="text" class="form-control" id="edit-thread-title">
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="edit-thread-category" class="form-label">Category</label>
+                                                        <select id="edit-thread-category" class="form-select">
+                                                            <option value="Q&A">Q&A</option>
+                                                            <option value="Tip">Tip</option>
+                                                            <option value="Idea">Idea</option>
+                                                            <option value="Bug">Bug</option>
+                                                            <option value="General">General</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="edit-thread-content" class="form-label">Content</label>
+                                                        <textarea id="edit-thread-content" class="form-control" rows="4"></textarea>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                    <button type="button" class="btn btn-primary" id="save-thread-edit">Save</button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

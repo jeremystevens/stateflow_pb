@@ -228,7 +228,7 @@ function incrementViewCount($pasteId, $ipAddress) {
         
         if (!$stmt->fetch()) {
             // Record the view
-            $stmt = $pdo->prepare("INSERT INTO paste_views (paste_id, ip_address, created_at) VALUES (?, ?, ?)");
+            $stmt = $pdo->prepare("INSERT INTO paste_views (paste_id, ip_address, created_at) VALUES (?, ?, ?, ?)");
             $stmt->execute([$pasteId, $ipAddress, time()]);
             
             // Increment the counter
@@ -500,25 +500,25 @@ function getDiscussionPosts($threadId) {
     return $stmt->fetchAll();
 }
 
-function createDiscussionThread($pasteId, $title, $category, $content, $username = 'Anonymous') {
+function createDiscussionThread($pasteId, $title, $category, $content, $username = 'Anonymous', $userId = null) {
     $db = getDatabase();
     $db->beginTransaction();
     
     try {
         // Create thread
-        $stmt = $db->prepare("
-            INSERT INTO paste_discussion_threads (paste_id, username, title, category)
-            VALUES (?, ?, ?, ?)
-        ");
-        $stmt->execute([$pasteId, $username, $title, $category]);
+        $stmt = $db->prepare(
+            "INSERT INTO paste_discussion_threads (paste_id, user_id, username, title, category)"
+            . " VALUES (?, ?, ?, ?, ?)"
+        );
+        $stmt->execute([$pasteId, $userId, $username, $title, $category]);
         $threadId = $db->lastInsertId();
         
         // Create initial post
-        $stmt = $db->prepare("
-            INSERT INTO paste_discussion_posts (thread_id, username, content)
-            VALUES (?, ?, ?)
-        ");
-        $stmt->execute([$threadId, $username, $content]);
+        $stmt = $db->prepare(
+            "INSERT INTO paste_discussion_posts (thread_id, user_id, username, content)"
+            . " VALUES (?, ?, ?, ?)"
+        );
+        $stmt->execute([$threadId, $userId, $username, $content]);
         
         $db->commit();
         return $threadId;
@@ -528,13 +528,13 @@ function createDiscussionThread($pasteId, $title, $category, $content, $username
     }
 }
 
-function addDiscussionPost($threadId, $content, $username = 'Anonymous') {
+function addDiscussionPost($threadId, $content, $username = 'Anonymous', $userId = null) {
     $db = getDatabase();
     $stmt = $db->prepare("
-        INSERT INTO paste_discussion_posts (thread_id, username, content)
-        VALUES (?, ?, ?)
+        INSERT INTO paste_discussion_posts (thread_id, user_id, username, content)
+        VALUES (?, ?, ?, ?)
     ");
-    $stmt->execute([$threadId, $username, $content]);
+    $stmt->execute([$threadId, $userId, $username, $content]);
     return $db->lastInsertId();
 }
 
@@ -561,4 +561,57 @@ function logPasteAccessAttempt($pasteId, $ipAddress, $success) {
 }
 
 
+
+function updateDiscussionThread($threadId, $userId, $title, $category, $content) {
+    $db = getDatabase();
+    $db->beginTransaction();
+    try {
+        $stmt = $db->prepare("SELECT user_id FROM paste_discussion_threads WHERE id = ?");
+        $stmt->execute([$threadId]);
+        $thread = $stmt->fetch();
+        if (!$thread || (int)$thread['user_id'] !== (int)$userId) {
+            $db->rollBack();
+            return false;
+        }
+        $stmt = $db->prepare("UPDATE paste_discussion_threads SET title = ?, category = ? WHERE id = ?");
+        $stmt->execute([$title, $category, $threadId]);
+        $stmt = $db->prepare("SELECT id FROM paste_discussion_posts WHERE thread_id = ? ORDER BY id ASC LIMIT 1");
+        $stmt->execute([$threadId]);
+        $firstPostId = $stmt->fetchColumn();
+        if ($firstPostId) {
+            $stmt = $db->prepare("UPDATE paste_discussion_posts SET content = ? WHERE id = ?");
+            $stmt->execute([$content, $firstPostId]);
+        }
+        $db->commit();
+        return true;
+    } catch (Exception $e) {
+        $db->rollBack();
+        error_log('Update discussion thread failed: ' . $e->getMessage());
+        return false;
+    }
+}
+
+function updateDiscussionPost($postId, $userId, $content) {
+    $db = getDatabase();
+    $stmt = $db->prepare("SELECT user_id FROM paste_discussion_posts WHERE id = ? AND is_deleted = 0");
+    $stmt->execute([$postId]);
+    $post = $stmt->fetch();
+    if (!$post || (int)$post['user_id'] !== (int)$userId) {
+        return false;
+    }
+    $stmt = $db->prepare("UPDATE paste_discussion_posts SET content = ? WHERE id = ?");
+    return $stmt->execute([$content, $postId]);
+}
+
+function deleteDiscussionPost($postId, $userId) {
+    $db = getDatabase();
+    $stmt = $db->prepare("SELECT user_id FROM paste_discussion_posts WHERE id = ? AND is_deleted = 0");
+    $stmt->execute([$postId]);
+    $post = $stmt->fetch();
+    if (!$post || (int)$post['user_id'] !== (int)$userId) {
+        return false;
+    }
+    $stmt = $db->prepare("UPDATE paste_discussion_posts SET is_deleted = 1 WHERE id = ?");
+    return $stmt->execute([$postId]);
+}
 ?>
