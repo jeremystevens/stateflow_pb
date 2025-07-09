@@ -82,11 +82,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $title = trim($_POST['title'] ?? '');
         $category = trim($_POST['category'] ?? '');
         $content = trim($_POST['content'] ?? '');
-        $username = trim($_POST['username'] ?? 'Anonymous');
+        $userId = $_SESSION['user_id'] ?? null;
+        if ($userId) {
+            $stmt = $pdo->prepare("SELECT username FROM users WHERE id = ?");
+            $stmt->execute([$userId]);
+            $username = $stmt->fetchColumn();
+        } else {
+            $username = trim($_POST['username'] ?? 'Anonymous');
+        }
         
         if (!empty($title) && !empty($category) && !empty($content)) {
             try {
-                $threadId = createDiscussionThread($pasteId, $title, $category, $content, $username);
+                $threadId = createDiscussionThread($pasteId, $title, $category, $content, $username, $userId);
                 if ($threadId) {
                     // Redirect to discussions tab to show the new thread
                     header("Location: " . $_SERVER['PHP_SELF'] . "?id=" . $pasteId . "#discussions");
@@ -103,11 +110,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'add_discussion_post') {
         $threadId = $_POST['thread_id'] ?? '';
         $content = trim($_POST['content'] ?? '');
-        $username = trim($_POST['username'] ?? 'Anonymous');
+        $userId = $_SESSION['user_id'] ?? null;
+        if ($userId) {
+            $stmt = $pdo->prepare("SELECT username FROM users WHERE id = ?");
+            $stmt->execute([$userId]);
+            $username = $stmt->fetchColumn();
+        } else {
+            $username = trim($_POST['username'] ?? 'Anonymous');
+        }
         
         if (!empty($content) && !empty($threadId)) {
             try {
-                $postId = addDiscussionPost($threadId, $content, $username);
+                $postId = addDiscussionPost($threadId, $content, $username, $userId);
                 if ($postId) {
                     // Redirect back to the thread view
                     header("Location: " . $_SERVER['PHP_SELF'] . "?id=" . $pasteId . "&thread=" . $threadId . "#discussions");
@@ -1098,6 +1112,11 @@ if ($paste['line_count'] > $maxLines): ?>
                                         <button class="btn btn-outline-secondary btn-sm" onclick="backToDiscussions()">
                                             <i class="fas fa-arrow-left me-1"></i>Back to Discussions
                                         </button>
+                                        <?php if (isset($_SESSION['user_id']) && $thread['user_id'] == $_SESSION['user_id']): ?>
+                                        <button class="btn btn-sm btn-primary" id="edit-thread-btn" data-thread-id="<?= $thread['id'] ?>">
+                                            <i class="fas fa-edit me-1"></i>Edit Thread
+                                        </button>
+                                        <?php endif; ?>
                                     </div>
                                     
                                     <div class="mb-4">
@@ -1125,7 +1144,7 @@ if ($paste['line_count'] > $maxLines): ?>
                                     
                                     <div class="thread-posts">
                                         <?php foreach ($threadPosts as $index => $post): ?>
-                                        <div class="card mb-3 <?= $index === 0 ? 'border-primary' : '' ?>">
+                                        <div class="card mb-3 <?= $index === 0 ? 'border-primary' : '' ?>" data-post-id="<?= $post['id'] ?>">
                                             <div class="card-body">
                                                 <div class="d-flex justify-content-between align-items-start mb-2">
                                                     <div class="d-flex align-items-center gap-2">
@@ -1139,8 +1158,14 @@ if ($paste['line_count'] > $maxLines): ?>
                                                         </div>
                                                     </div>
                                                     <small class="text-muted"><?= date('M j, Y \a\t g:i A', $post['created_at']) ?></small>
+                                                    <?php if (isset($_SESSION['user_id']) && $post['user_id'] == $_SESSION['user_id']): ?>
+                                                        <div class="ms-2">
+                                                            <button type="button" class="btn btn-sm btn-link edit-post" data-post-id="<?= $post['id'] ?>"><i class="fas fa-edit"></i></button>
+                                                            <button type="button" class="btn btn-sm btn-link text-danger delete-post" data-post-id="<?= $post['id'] ?>"><i class="fas fa-trash"></i></button>
+                                                        </div>
+                                                    <?php endif; ?>
                                                 </div>
-                                                <div class="mt-2">
+                                                <div class="mt-2" id="post-content-<?= $post['id'] ?>">
                                                     <?= nl2br(htmlspecialchars($post['content'])) ?>
                                                 </div>
                                             </div>
@@ -1160,8 +1185,8 @@ if ($paste['line_count'] > $maxLines): ?>
                                                     
                                                     <div class="mb-3">
                                                         <label for="reply-username" class="form-label">Your Name</label>
-                                                        <input type="text" class="form-control" name="username" id="reply-username" 
-                                                               value="Anonymous" required>
+                                                        <input type="text" class="form-control" name="username" id="reply-username"
+                                                               value="<?= htmlspecialchars($userData['username'] ?? 'Anonymous') ?>" <?= isset($userData['username']) ? 'readonly' : '' ?> required>
                                                     </div>
                                                     
                                                     <div class="mb-3">
@@ -1174,6 +1199,41 @@ if ($paste['line_count'] > $maxLines): ?>
                                                         <i class="fas fa-reply me-1"></i>Post Reply
                                                     </button>
                                                 </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Edit Thread Modal -->
+                                    <div class="modal fade" id="editThreadModal" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Edit Thread</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="mb-3">
+                                                        <label for="edit-thread-title" class="form-label">Title</label>
+                                                        <input type="text" class="form-control" id="edit-thread-title">
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="edit-thread-category" class="form-label">Category</label>
+                                                        <select id="edit-thread-category" class="form-select">
+                                                            <option value="Q&A">Q&A</option>
+                                                            <option value="Tip">Tip</option>
+                                                            <option value="Idea">Idea</option>
+                                                            <option value="Bug">Bug</option>
+                                                            <option value="General">General</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="edit-thread-content" class="form-label">Content</label>
+                                                        <textarea id="edit-thread-content" class="form-control" rows="4"></textarea>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                    <button type="button" class="btn btn-primary" id="save-thread-edit">Save</button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -1844,10 +1904,80 @@ if ($paste['line_count'] > $maxLines): ?>
                     showNotification(response.error || 'Failed to delete comment', 'error');
                 }
             })
-            .fail(function() {
-                showNotification('Failed to delete comment', 'error');
-            });
+        .fail(function() {
+            showNotification('Failed to delete comment', 'error');
+        });
     }
+
+    // Edit thread modal populate
+    const editThreadBtn = document.getElementById('edit-thread-btn');
+    if (editThreadBtn) {
+        editThreadBtn.addEventListener('click', function() {
+            document.getElementById('edit-thread-title').value = <?= json_encode($thread['title']) ?>;
+            document.getElementById('edit-thread-category').value = <?= json_encode($thread['category']) ?>;
+            document.getElementById('edit-thread-content').value = <?= json_encode($threadPosts[0]['content'] ?? '') ?>;
+            const modal = new bootstrap.Modal(document.getElementById('editThreadModal'));
+            modal.show();
+        });
+    }
+
+    const saveThreadBtn = document.getElementById('save-thread-edit');
+    if (saveThreadBtn) {
+        saveThreadBtn.addEventListener('click', function() {
+            const title = document.getElementById('edit-thread-title').value.trim();
+            const category = document.getElementById('edit-thread-category').value;
+            const content = document.getElementById('edit-thread-content').value.trim();
+            $.post('/api/discussions.php', {
+                action: 'edit_thread',
+                thread_id: editThreadBtn.dataset.threadId,
+                title: title,
+                category: category,
+                content: content
+            }).done(function(resp){
+                if(resp.success){
+                    showNotification('Thread updated', 'success');
+                    location.reload();
+                } else {
+                    showNotification(resp.error || 'Update failed', 'error');
+                }
+            });
+        });
+    }
+
+    // Edit and delete posts
+    document.querySelectorAll('.edit-post').forEach(btn => {
+        btn.addEventListener('click', function(){
+            const postId = this.dataset.postId;
+            const contentDiv = document.getElementById('post-content-' + postId);
+            const current = contentDiv.innerText.trim();
+            const newContent = prompt('Edit your post:', current);
+            if (newContent !== null) {
+                $.post('/api/discussions.php', {action:'edit_post', post_id:postId, content:newContent}).done(function(r){
+                    if(r.success){
+                        contentDiv.textContent = newContent;
+                        showNotification('Post updated','success');
+                    } else {
+                        showNotification(r.error || 'Update failed','error');
+                    }
+                });
+            }
+        });
+    });
+
+    document.querySelectorAll('.delete-post').forEach(btn => {
+        btn.addEventListener('click', function(){
+            if(!confirm('Delete this post?')) return;
+            const postId = this.dataset.postId;
+            $.post('/api/discussions.php', {action:'delete_post', post_id:postId}).done(function(r){
+                if(r.success){
+                    document.querySelector('[data-post-id="'+postId+'"]').remove();
+                    showNotification('Post deleted','success');
+                } else {
+                    showNotification(r.error || 'Delete failed','error');
+                }
+            });
+        });
+    });
 
     // Show notification
     function showNotification(message, type = 'info') {
