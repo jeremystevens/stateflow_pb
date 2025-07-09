@@ -44,11 +44,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $title = trim($_POST['title'] ?? '');
         $category = trim($_POST['category'] ?? '');
         $content = trim($_POST['content'] ?? '');
+        $userId = $_SESSION['user_id'] ?? null;
         $username = trim($_POST['username'] ?? 'Anonymous');
+        if ($userId) {
+            $username = $_SESSION['username'] ?? null;
+            if (!$username) {
+                $stmt = $pdo->prepare('SELECT username FROM users WHERE id = ?');
+                $stmt->execute([$userId]);
+                $username = $stmt->fetchColumn() ?: 'Anonymous';
+                $_SESSION['username'] = $username;
+            }
+        }
         
         if (!empty($title) && !empty($category) && !empty($content)) {
             try {
-                $threadId = createDiscussionThread($pasteId, $title, $category, $content, $username);
+                $threadId = createDiscussionThread($pasteId, $title, $category, $content, $userId, $username);
                 if ($threadId) {
                     // Redirect to discussions tab to show the new thread
                     header("Location: " . $_SERVER['PHP_SELF'] . "?id=" . $pasteId . "#discussions");
@@ -65,11 +75,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'add_discussion_post') {
         $threadId = $_POST['thread_id'] ?? '';
         $content = trim($_POST['content'] ?? '');
+        $userId = $_SESSION['user_id'] ?? null;
         $username = trim($_POST['username'] ?? 'Anonymous');
+        if ($userId) {
+            $username = $_SESSION['username'] ?? null;
+            if (!$username) {
+                $stmt = $pdo->prepare('SELECT username FROM users WHERE id = ?');
+                $stmt->execute([$userId]);
+                $username = $stmt->fetchColumn() ?: 'Anonymous';
+                $_SESSION['username'] = $username;
+            }
+        }
         
         if (!empty($content) && !empty($threadId)) {
             try {
-                $postId = addDiscussionPost($threadId, $content, $username);
+                $postId = addDiscussionPost($threadId, $content, $userId, $username);
                 if ($postId) {
                     // Redirect back to the thread view
                     header("Location: " . $_SERVER['PHP_SELF'] . "?id=" . $pasteId . "&thread=" . $threadId . "#discussions");
