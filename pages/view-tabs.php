@@ -176,11 +176,16 @@
                                                     <input type="hidden" name="action" value="add_discussion_post">
                                                     <input type="hidden" name="thread_id" value="<?= $thread['id'] ?>">
                                                     
+                                                    <?php if (!empty($userData['username'])): ?>
+                                                        <input type="hidden" name="username" value="<?= htmlspecialchars($userData['username']) ?>">
+                                                        <p class="mb-3">Replying as <?= htmlspecialchars($userData['username']) ?></p>
+                                                    <?php else: ?>
                                                     <div class="mb-3">
                                                         <label for="reply-username" class="form-label">Your Name</label>
-                                                        <input type="text" class="form-control" name="username" id="reply-username" 
+                                                        <input type="text" class="form-control" name="username" id="reply-username"
                                                                value="Anonymous" required>
                                                     </div>
+                                                    <?php endif; ?>
                                                     
                                                     <div class="mb-3">
                                                         <label for="reply-content" class="form-label">Your Reply</label>
