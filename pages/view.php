@@ -1155,7 +1155,7 @@ if ($paste['line_count'] > $maxLines): ?>
                                     
                                     <div class="thread-posts">
                                         <?php foreach ($threadPosts as $index => $post): ?>
-                                        <div class="card mb-3 <?= $index === 0 ? 'border-primary' : '' ?>">
+                                        <div class="card mb-3 <?= $index === 0 ? 'border-primary' : '' ?>" id="post-<?= $post['id'] ?>">
                                             <div class="card-body">
                                                 <div class="d-flex justify-content-between align-items-start mb-2">
                                                     <div class="d-flex align-items-center gap-2">
