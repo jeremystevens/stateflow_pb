@@ -116,6 +116,11 @@
                                         <button class="btn btn-outline-secondary btn-sm" onclick="backToDiscussions()">
                                             <i class="fas fa-arrow-left me-1"></i>Back to Discussions
                                         </button>
+                                        <?php if (!empty($userData['id']) && $thread['user_id'] == $userData['id']): ?>
+                                        <button class="btn btn-link btn-sm text-danger" onclick="deleteDiscussionThread(<?= $thread['id'] ?>)">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                        <?php endif; ?>
                                     </div>
                                     
                                     <div class="mb-4">
@@ -143,7 +148,7 @@
                                     
                                     <div class="thread-posts">
                                         <?php foreach ($threadPosts as $index => $post): ?>
-                                        <div class="card mb-3 <?= $index === 0 ? 'border-primary' : '' ?>">
+                                        <div class="card mb-3 <?= $index === 0 ? 'border-primary' : '' ?>" id="post-<?= $post['id'] ?>">
                                             <div class="card-body">
                                                 <div class="d-flex justify-content-between align-items-start mb-2">
                                                     <div class="d-flex align-items-center gap-2">
@@ -156,7 +161,14 @@
                                                             <?php endif; ?>
                                                         </div>
                                                     </div>
-                                                    <small class="text-muted"><?= date('M j, Y \a\t g:i A', $post['created_at']) ?></small>
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <small class="text-muted"><?= date('M j, Y \a\t g:i A', $post['created_at']) ?></small>
+                                                        <?php if (!empty($userData['id']) && $post['user_id'] == $userData['id']): ?>
+                                                        <button class="btn btn-link btn-sm text-danger p-0" onclick="deleteDiscussionPost(<?= $post['id'] ?>)">
+                                                            <i class="fas fa-trash-alt"></i>
+                                                        </button>
+                                                        <?php endif; ?>
+                                                    </div>
                                                 </div>
                                                 <div class="mt-2">
                                                     <?= nl2br(htmlspecialchars($post['content'])) ?>
@@ -243,8 +255,8 @@
                                         </div>
                                         <?php else: ?>
                                             <?php foreach ($threads as $thread): ?>
-                                            <div class="discussion-thread-item mb-3 p-3 border rounded hover-shadow" onclick="viewThread(<?php echo $thread['id']; ?>)">
-                                                <div class="d-flex align-items-start">
+                                            <div class="discussion-thread-item mb-3 p-3 border rounded hover-shadow" id="thread-<?= $thread['id']; ?>" onclick="viewThread(<?php echo $thread['id']; ?>)">
+                                                <div class="d-flex align-items-start w-100">
                                                     <div class="avatar-container me-3">
                                                         <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiM5Y2E2ZjciLz4KPHN2ZyB4PSIxMCIgeT0iMTAiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgdmlld0JveD0iMCAwIDIwIDIwIiBmaWxsPSIjZmZmIj4KPHBhdGggZD0iTTEwIDEwYy0xIDAtMS41LS41LTEuNS0xLjVzLjUtMS41IDEuNS0xLjUgMS41LjUgMS41IDEuNS0uNSAxLjUtMS41IDEuNXptNSAwYy40NSAwIDEuMi0uNSAxLjItMS41cy0uNS0xLjUtMS4yLTEuNS0xLjIuNS0xLjIgMS41LjUgMS41IDEuMiAxLjV6Ii8+Cjwvc3ZnPgo8L3N2Zz4K" 
                                                              alt="Avatar" class="rounded-circle" width="40" height="40">
@@ -260,6 +272,11 @@
                                                             <span><i class="fas fa-reply me-1"></i><?php echo $thread['reply_count']; ?> replies</span>
                                                         </div>
                                                     </div>
+                                                    <?php if (!empty($userData['id']) && $thread['user_id'] == $userData['id']): ?>
+                                                    <button class="btn btn-link btn-sm text-danger ms-auto" onclick="deleteDiscussionThread(<?= $thread['id']; ?>); event.stopPropagation();">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                    </button>
+                                                    <?php endif; ?>
                                                 </div>
                                             </div>
                                             <?php endforeach; ?>

@@ -547,6 +547,46 @@ function getDiscussionThread($threadId) {
     return $stmt->fetch();
 }
 
+function deleteDiscussionThread($threadId, $userId) {
+    global $pdo;
+
+    try {
+        $stmt = $pdo->prepare("SELECT user_id FROM paste_discussion_threads WHERE id = ?");
+        $stmt->execute([$threadId]);
+        $thread = $stmt->fetch();
+
+        if (!$thread || $thread['user_id'] != $userId) {
+            return false;
+        }
+
+        $stmt = $pdo->prepare("DELETE FROM paste_discussion_threads WHERE id = ?");
+        return $stmt->execute([$threadId]);
+    } catch (PDOException $e) {
+        error_log('Delete discussion thread failed: ' . $e->getMessage());
+        return false;
+    }
+}
+
+function deleteDiscussionPost($postId, $userId) {
+    global $pdo;
+
+    try {
+        $stmt = $pdo->prepare("SELECT user_id FROM paste_discussion_posts WHERE id = ? AND is_deleted = 0");
+        $stmt->execute([$postId]);
+        $post = $stmt->fetch();
+
+        if (!$post || $post['user_id'] != $userId) {
+            return false;
+        }
+
+        $stmt = $pdo->prepare("UPDATE paste_discussion_posts SET is_deleted = 1 WHERE id = ?");
+        return $stmt->execute([$postId]);
+    } catch (PDOException $e) {
+        error_log('Delete discussion post failed: ' . $e->getMessage());
+        return false;
+    }
+}
+
 /**
  * Log password access attempts for a paste
  */

@@ -1874,6 +1874,45 @@ if ($paste['line_count'] > $maxLines): ?>
             });
     }
 
+    function deleteDiscussionPost(postId) {
+        if (!confirm('Are you sure you want to delete this post?')) {
+            return;
+        }
+
+        $.post('/api/delete_discussion_post.php', { post_id: postId })
+            .done(function(response) {
+                if (response.success) {
+                    document.getElementById('post-' + postId).remove();
+                    showNotification('Post deleted', 'success');
+                } else {
+                    showNotification(response.error || 'Failed to delete post', 'error');
+                }
+            })
+            .fail(function() {
+                showNotification('Failed to delete post', 'error');
+            });
+    }
+
+    function deleteDiscussionThread(threadId) {
+        if (!confirm('Are you sure you want to delete this thread?')) {
+            return;
+        }
+
+        $.post('/api/delete_discussion_thread.php', { thread_id: threadId })
+            .done(function(response) {
+                if (response.success) {
+                    var elem = document.getElementById('thread-' + threadId);
+                    if (elem) { elem.remove(); }
+                    showNotification('Thread deleted', 'success');
+                } else {
+                    showNotification(response.error || 'Failed to delete thread', 'error');
+                }
+            })
+            .fail(function() {
+                showNotification('Failed to delete thread', 'error');
+            });
+    }
+
     // Show notification
     function showNotification(message, type = 'info') {
         // Remove existing notifications
