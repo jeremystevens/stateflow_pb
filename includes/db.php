@@ -448,6 +448,31 @@ function addCommentReply($commentId, $pasteId, $content, $userId = null) {
     }
 }
 
+/**
+ * Delete a comment if it belongs to the given user
+ */
+function deleteComment($commentId, $userId) {
+    global $pdo;
+
+    try {
+        // Verify ownership
+        $stmt = $pdo->prepare("SELECT user_id FROM comments WHERE id = ? AND is_deleted = 0");
+        $stmt->execute([$commentId]);
+        $comment = $stmt->fetch();
+
+        if (!$comment || $comment['user_id'] != $userId) {
+            return false;
+        }
+
+        // Soft delete the comment
+        $stmt = $pdo->prepare("UPDATE comments SET is_deleted = 1 WHERE id = ?");
+        return $stmt->execute([$commentId]);
+    } catch (PDOException $e) {
+        error_log("Delete comment failed: " . $e->getMessage());
+        return false;
+    }
+}
+
 // Discussion Thread Functions
 function getDiscussionThreads($pasteId) {
     $db = getDatabase();

@@ -9,6 +9,12 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+require_once __DIR__ . '/../includes/achievements.php';
+loadAchievementsFromCSV(__DIR__ . '/../database/achievements.csv');
+
 // Handle preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
@@ -52,9 +58,13 @@ try {
             }
             
             // Add the comment
-            $commentId = addComment($pasteId, $content, null);
+            $userId = $_SESSION['user_id'] ?? null;
+            $commentId = addComment($pasteId, $content, $userId);
             
             if ($commentId) {
+                if ($userId) {
+                    updateAchievementProgress($userId, 'Commenter');
+                }
                 // Get the newly created comment with formatted data
                 $db = getDatabase();
                 $stmt = $db->prepare("
@@ -71,7 +81,7 @@ try {
                     'id' => $comment['id'],
                     'content' => $comment['content'],
                     'username' => $comment['username'] ?: 'Anonymous',
-                    'profile_image' => $comment['profile_image'],
+                    'profile_image' => $comment['profile_image'] ? '/uploads/avatars/' . $comment['profile_image'] : '/img/default-avatar.svg',
                     'created_at' => $comment['created_at'],
                     'formatted_date' => date('M j, Y \a\t g:i A', $comment['created_at'])
                 ];
@@ -98,9 +108,13 @@ try {
             }
             
             // Add the reply
-            $replyId = addCommentReply($commentId, $pasteId, $content, null);
+            $userId = $_SESSION['user_id'] ?? null;
+            $replyId = addCommentReply($commentId, $pasteId, $content, $userId);
             
             if ($replyId) {
+                if ($userId) {
+                    updateAchievementProgress($userId, 'Commenter');
+                }
                 // Get the newly created reply
                 $db = getDatabase();
                 $stmt = $db->prepare("
@@ -117,7 +131,7 @@ try {
                     'id' => $reply['id'],
                     'content' => $reply['content'],
                     'username' => $reply['username'] ?: 'Anonymous',
-                    'profile_image' => $reply['profile_image'],
+                    'profile_image' => $reply['profile_image'] ? '/uploads/avatars/' . $reply['profile_image'] : '/img/default-avatar.svg',
                     'created_at' => $reply['created_at'],
                     'formatted_date' => date('M j, Y \a\t g:i A', $reply['created_at'])
                 ];
@@ -147,7 +161,7 @@ try {
                         'id' => $reply['id'],
                         'content' => $reply['content'],
                         'username' => $reply['username'] ?: 'Anonymous',
-                        'profile_image' => $reply['profile_image'],
+                        'profile_image' => $reply['profile_image'] ? '/uploads/avatars/' . $reply['profile_image'] : '/img/default-avatar.svg',
                         'created_at' => $reply['created_at'],
                         'formatted_date' => date('M j, Y \a\t g:i A', $reply['created_at'])
                     ];
@@ -157,7 +171,7 @@ try {
                     'id' => $comment['id'],
                     'content' => $comment['content'],
                     'username' => $comment['username'] ?: 'Anonymous',
-                    'profile_image' => $comment['profile_image'],
+                    'profile_image' => $comment['profile_image'] ? '/uploads/avatars/' . $comment['profile_image'] : '/img/default-avatar.svg',
                     'created_at' => $comment['created_at'],
                     'formatted_date' => date('M j, Y \a\t g:i A', $comment['created_at']),
                     'replies' => $formattedReplies
@@ -180,5 +194,4 @@ try {
     error_log("Comments API Error: " . $e->getMessage());
     http_response_code(500);
     echo json_encode(['error' => 'Internal server error: ' . $e->getMessage()]);
-}
-?>
+}?>

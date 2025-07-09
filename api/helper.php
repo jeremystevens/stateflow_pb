@@ -6,6 +6,11 @@
 
 header('Content-Type: application/json');
 require_once __DIR__ . '/../includes/db.php';
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+require_once __DIR__ . '/../includes/achievements.php';
+loadAchievementsFromCSV(__DIR__ . '/../database/achievements.csv');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'error' => 'Method not allowed']);
@@ -31,9 +36,13 @@ try {
             }
             
             // Add comment
-            $commentId = addComment($pasteId, $content, null);
+            $userId = $_SESSION['user_id'] ?? null;
+            $commentId = addComment($pasteId, $content, $userId);
             
             if ($commentId) {
+                if ($userId) {
+                    updateAchievementProgress($userId, 'Commenter');
+                }
                 echo json_encode(['success' => true, 'message' => 'Comment added successfully!']);
             } else {
                 echo json_encode(['success' => false, 'error' => 'Failed to add comment']);
@@ -55,9 +64,13 @@ try {
             }
             
             // Add reply
-            $replyId = addCommentReply($commentId, $pasteId, $content, null);
+            $userId = $_SESSION['user_id'] ?? null;
+            $replyId = addCommentReply($commentId, $pasteId, $content, $userId);
             
             if ($replyId) {
+                if ($userId) {
+                    updateAchievementProgress($userId, 'Commenter');
+                }
                 echo json_encode(['success' => true, 'message' => 'Reply added successfully!']);
             } else {
                 echo json_encode(['success' => false, 'error' => 'Failed to add reply']);
@@ -70,5 +83,4 @@ try {
 } catch (Exception $e) {
     error_log("Helper API Error: " . $e->getMessage());
     echo json_encode(['success' => false, 'error' => 'Server error: ' . $e->getMessage()]);
-}
-?>
+}?>
