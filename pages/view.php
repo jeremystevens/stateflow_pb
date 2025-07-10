@@ -667,7 +667,7 @@ include '../includes/header.php';
                             </button>
                             <?php endif; ?>
                             <div class="dropdown">
-                                <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-container="body" title="More Options">
+                                <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-container="body" data-bs-offset="0,8" data-bs-placement="bottom-end" title="More Options">
                                     <i class="fas fa-ellipsis-h"></i>
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end">
@@ -690,7 +690,7 @@ include '../includes/header.php';
                         <!-- Mobile Action Button -->
                         <div class="d-md-none ms-3">
                             <div class="dropdown">
-                                <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-container="body" title="Actions">
+                                <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-container="body" data-bs-offset="0,8" data-bs-placement="bottom-end" title="Actions">
                                     <i class="fas fa-ellipsis-v"></i>
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end">
