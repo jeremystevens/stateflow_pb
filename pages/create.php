@@ -41,6 +41,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $zeroKnowledge = isset($_POST['zero_knowledge']);
     $pasteAsGuest = isset($_POST['paste_as_guest']);
     $parentPasteId = $_POST['parent_paste_id'] ?? null;
+    $tagsInput = trim($_POST['tags'] ?? '');
+    $tags = '';
+    if ($tagsInput !== '') {
+        $tagsArray = array_filter(array_map('trim', explode(',', $tagsInput)));
+        $tags = implode(',', $tagsArray);
+    }
     
     if (empty($content)) {
         $error = 'Content cannot be empty.';
@@ -83,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $userId = $_SESSION['user_id'];
         }
 
-        $result = createPasteAdvanced($title, $content, $language, $expirationDate, $visibility, $hashedPassword, $burnAfterRead, $zeroKnowledge, $parentPasteId, $userId);
+        $result = createPasteAdvanced($title, $content, $language, $expirationDate, $visibility, $hashedPassword, $burnAfterRead, $zeroKnowledge, $parentPasteId, $userId, $tags);
         
         if ($result) {
             // Handle different return formats for compatibility
@@ -240,6 +246,17 @@ include '../includes/header.php';
                                         <option value="shell">Shell</option>
                                         <option value="dockerfile">Dockerfile</option>
                                     </select>
+                                </div>
+
+                                <!-- Tags -->
+                                <div class="mb-3">
+                                    <label for="tags" class="form-label">
+                                        <i class="fas fa-tags me-1"></i>Tags
+                                    </label>
+                                    <input type="text" class="form-control" id="tags" name="tags"
+                                           placeholder="e.g. php, security, snippet"
+                                           value="<?php echo htmlspecialchars($_POST['tags'] ?? ''); ?>">
+                                    <div class="form-text">Separate tags with commas</div>
                                 </div>
 
                                 <!-- Content -->
