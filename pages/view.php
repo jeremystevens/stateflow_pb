@@ -666,65 +666,15 @@ include '../includes/header.php';
                                 <i class="fas fa-flag me-1"></i>Report
                             </button>
                             <?php endif; ?>
-                            <div class="dropdown">
-                                <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-container="body" data-bs-offset="0,8" data-bs-placement="bottom-end" title="More Options">
-                                    <i class="fas fa-ellipsis-h"></i>
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end">
-                                    <li><a class="dropdown-item" href="#" onclick="sharePaste()">
-                                        <i class="fas fa-share me-2"></i>Share Paste
-                                    </a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" href="create.php?clone=<?php echo $pasteId; ?>">
-                                        <i class="fas fa-clone me-2"></i>Clone Paste
-                                    </a></li>
-                                    <li><a class="dropdown-item" href="create.php?fork=<?php echo $pasteId; ?>">
-                                        <i class="fas fa-code-branch me-2"></i>Fork Paste
-                                    </a></li>
-                                    <li><a class="dropdown-item" href="#" onclick="addToFavorites()">
-                                        <i class="far fa-heart me-2"></i>Add to Favorites
-                                    </a></li>
-                                </ul>
-                            </div>
+                            <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="offcanvas" data-bs-target="#actionsOffcanvas" aria-controls="actionsOffcanvas" title="More Options">
+                                <i class="fas fa-ellipsis-h"></i>
+                            </button>
                         </div>
                         <!-- Mobile Action Button -->
                         <div class="d-md-none ms-3">
-                            <div class="dropdown">
-                                <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-container="body" data-bs-offset="0,8" data-bs-placement="bottom-end" title="Actions">
-                                    <i class="fas fa-ellipsis-v"></i>
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end">
-                                    <li><a class="dropdown-item" href="#" onclick="viewRaw()">
-                                        <i class="fas fa-file-alt me-2"></i>View Raw
-                                    </a></li>
-                                    <li><a class="dropdown-item" href="#" onclick="downloadPaste()">
-                                        <i class="fas fa-download me-2"></i>Download
-                                    </a></li>
-                                    <li><a class="dropdown-item" href="#" onclick="sharePaste()">
-                                        <i class="fas fa-share me-2"></i>Share Paste
-                                    </a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <?php if ($hasFlagged): ?>
-                                    <li><span class="dropdown-item text-muted disabled">
-                                        <i class="fas fa-flag me-2"></i>You already reported this paste
-                                    </span></li>
-                                    <?php else: ?>
-                                    <li><a class="dropdown-item text-danger" href="#" onclick="reportPaste('<?php echo $pasteId; ?>')">
-                                        <i class="fas fa-flag me-2"></i>Report Paste
-                                    </a></li>
-                                    <?php endif; ?>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" href="create.php?clone=<?php echo $pasteId; ?>">
-                                        <i class="fas fa-clone me-2"></i>Clone Paste
-                                    </a></li>
-                                    <li><a class="dropdown-item" href="create.php?fork=<?php echo $pasteId; ?>">
-                                        <i class="fas fa-code-branch me-2"></i>Fork Paste
-                                    </a></li>
-                                    <li><a class="dropdown-item" href="#" onclick="addToFavorites()">
-                                        <i class="far fa-heart me-2"></i>Add to Favorites
-                                    </a></li>
-                                </ul>
-                            </div>
+                            <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="offcanvas" data-bs-target="#actionsOffcanvas" aria-controls="actionsOffcanvas" title="Actions">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
                         </div>
                     </div>
                     
@@ -2224,6 +2174,31 @@ if ($paste['line_count'] > $maxLines): ?>
         </div>
     </div>
     <?php endif; ?>
+
+    <!-- Offcanvas Actions Menu -->
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="actionsOffcanvas" aria-labelledby="actionsOffcanvasLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="actionsOffcanvasLabel">Actions</h5>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <ul class="list-unstyled">
+                <li><a href="#" class="dropdown-item" onclick="viewRaw()"><i class="fas fa-file-alt me-2"></i>View Raw</a></li>
+                <li><a href="#" class="dropdown-item" onclick="downloadPaste()"><i class="fas fa-download me-2"></i>Download</a></li>
+                <li><a href="#" class="dropdown-item" onclick="sharePaste()"><i class="fas fa-share me-2"></i>Share Paste</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <?php if ($hasFlagged): ?>
+                <li><span class="dropdown-item text-muted disabled"><i class="fas fa-flag me-2"></i>You already reported this paste</span></li>
+                <?php else: ?>
+                <li><a href="#" class="dropdown-item text-danger" onclick="reportPaste('<?php echo $pasteId; ?>')"><i class="fas fa-flag me-2"></i>Report Paste</a></li>
+                <?php endif; ?>
+                <li><hr class="dropdown-divider"></li>
+                <li><a href="create.php?clone=<?php echo $pasteId; ?>" class="dropdown-item"><i class="fas fa-clone me-2"></i>Clone Paste</a></li>
+                <li><a href="create.php?fork=<?php echo $pasteId; ?>" class="dropdown-item"><i class="fas fa-code-branch me-2"></i>Fork Paste</a></li>
+                <li><a href="#" class="dropdown-item" onclick="addToFavorites()"><i class="far fa-heart me-2"></i>Add to Favorites</a></li>
+            </ul>
+        </div>
+    </div>
 </main>
 
 <?php include '../includes/footer.php'; ?>
