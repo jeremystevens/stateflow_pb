@@ -39,11 +39,16 @@ $page = filter_input(INPUT_GET, 'page', FILTER_VALIDATE_INT, [
 $profile_user_id = $user['id'];
 $profile_username = $user['username'];
 
-// Count total pastes for pagination
+// Count total active (non-expired) pastes for pagination
 $countStmt = $pdo->prepare(
-    "SELECT COUNT(*) FROM pastes WHERE user_id = :uid"
+    "SELECT COUNT(*) FROM pastes " .
+    "WHERE user_id = :uid " .
+    "AND (expire_time IS NULL OR expire_time > :now)"
 );
-$countStmt->execute([':uid' => $profile_user_id]);
+$countStmt->execute([
+    ':uid' => $profile_user_id,
+    ':now' => time(),
+]);
 $totalPasteCount = (int)$countStmt->fetchColumn();
 $totalPages = (int)ceil($totalPasteCount / $perPage);
 if ($totalPages > 0 && $page > $totalPages) {
@@ -68,12 +73,14 @@ function buildPageUrl($p) {
  */
 function fetchUserPastes(PDO $pdo, $uid, $limit, $offset) {
     $stmt = $pdo->prepare(
-        "SELECT id, title, language, created_at FROM pastes
-         WHERE user_id = :uid
-         ORDER BY created_at DESC
-         LIMIT :limit OFFSET :offset"
+        "SELECT id, title, language, created_at FROM pastes " .
+        "WHERE user_id = :uid " .
+        "AND (expire_time IS NULL OR expire_time > :now) " .
+        "ORDER BY created_at DESC " .
+        "LIMIT :limit OFFSET :offset"
     );
     $stmt->bindValue(':uid', $uid, PDO::PARAM_STR);
+    $stmt->bindValue(':now', time(), PDO::PARAM_INT);
     $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
     $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
     $stmt->execute();
