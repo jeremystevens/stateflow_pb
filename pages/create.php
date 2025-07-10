@@ -22,6 +22,14 @@ if ($forkOriginalId) {
     $prefill = $stmt->fetchColumn();
 }
 
+// Prefill content when cloning an existing paste
+$cloneId = $_GET['clone'] ?? null;
+if ($cloneId) {
+    $stmt = $pdo->prepare("SELECT content FROM pastes WHERE id = ?");
+    $stmt->execute([$cloneId]);
+    $prefill = $stmt->fetchColumn();
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title = trim($_POST['title'] ?? '');
     $content = trim($_POST['content'] ?? '');
